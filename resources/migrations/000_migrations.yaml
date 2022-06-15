@@ -11864,6 +11864,17 @@ databaseChangeLog:
             columnName: last_name
             columnDataType: varchar(254)
 
+  - changeSet:
+      id: v44.00-034
+      author: calherries
+      comment: Added 0.44.0. Add last_activity to session
+      changes:
+        - addColumn:
+            tableName: core_session
+            columns:
+              name: last_activity
+              type: DATETIME
+              remarks: 'The last time that the session was used.'
 
 
 # >>>>>>>>>> DO NOT ADD NEW MIGRATIONS BELOW THIS LINE! ADD THEM ABOVE <<<<<<<<<<
