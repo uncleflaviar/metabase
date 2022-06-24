@@ -39,11 +39,32 @@ function buildVariableOption(variable) {
   };
 }
 
-export function getParameterMappingOptions(metadata, parameter = null, card) {
+function buildTextTagOption(tagName) {
+  return {
+    name: tagName,
+    icon: "string",
+    isForeign: false,
+    target: ["text-tag", tagName],
+  };
+}
+
+// TODO update more callsites?
+export function getParameterMappingOptions(
+  metadata,
+  parameter = null,
+  card,
+  dashcard = null,
+) {
+  // console.log(metadata);
+  // console.log(parameter);
+  // console.log(card);
+  // console.log(dashcard);
   const options = [];
   if (card.display === "text") {
-    // text cards don't have parameters
-    return [];
+    // TODO more sophisticated parameter parsing
+    const text = dashcard.visualization_settings.text;
+    const tagNames = text.match(/{{((\s|\w)*)}}/g);
+    return tagNames.map(buildTextTagOption);
   }
 
   const question = new Question(card, metadata);

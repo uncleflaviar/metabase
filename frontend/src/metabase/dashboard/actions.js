@@ -421,13 +421,16 @@ export const saveDashboardAndCards = createThunkAction(
                   // filter out mappings for deleted parameters
                   _.findWhere(dashboard.parameters, {
                     id: mapping.parameter_id,
-                  }) &&
-                  // filter out mappings for deleted series
-                  (card_id === mapping.card_id ||
-                    _.findWhere(series, { id: mapping.card_id })),
+                  }), //&&
+                //  TODO: re-add this logic
+                // filter out mappings for deleted series
+                // (card_id === mapping.card_id ||
+                //   _.findWhere(series, { id: mapping.card_id })),
               ),
           }),
         );
+
+        console.log(cards);
 
         const result = await DashboardApi.reposition_cards({
           dashId: dashboard.id,
