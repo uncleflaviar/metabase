@@ -3,7 +3,7 @@ import { t } from "ttag";
 import cx from "classnames";
 import _ from "underscore";
 
-import { DATE_MBQL_FILTER_MAPPING } from "metabase/parameters/constants";
+import { DATE_MBQL_FILTER_MAPPING } from "metabase-lib/parameters/constants";
 
 type Shortcut = {
   name: string;
@@ -48,9 +48,7 @@ type PredefinedRelativeDatePickerProps = {
   onFilterChange: (filter: any[]) => void;
 };
 
-export class PredefinedRelativeDatePicker extends React.Component<
-  PredefinedRelativeDatePickerProps
-> {
+export class PredefinedRelativeDatePicker extends React.Component<PredefinedRelativeDatePickerProps> {
   constructor(props: PredefinedRelativeDatePickerProps) {
     super(props);
 

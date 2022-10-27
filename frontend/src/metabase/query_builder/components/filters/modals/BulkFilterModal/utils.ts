@@ -1,11 +1,19 @@
-import StructuredQuery from "metabase-lib/lib/queries/StructuredQuery";
-import Filter from "metabase-lib/lib/queries/structured/Filter";
+import StructuredQuery, {
+  DimensionOption,
+  SegmentOption,
+  FilterSection,
+  isDimensionOption,
+} from "metabase-lib/queries/StructuredQuery";
+import type Filter from "metabase-lib/queries/structured/Filter";
+import type Dimension from "metabase-lib/Dimension";
 
 // fix between filters with missing or misordered arguments
 export function fixBetweens(query: StructuredQuery): StructuredQuery {
   const betweenFilters = query
     .filters()
-    .filter(filter => filter.operatorName() === "between");
+    .filter(
+      filter => filter.isStandard() && filter.operatorName() === "between",
+    );
 
   // find the first invalid filter (if any), and fix it recursively
   for (const filter of betweenFilters) {
@@ -61,4 +69,37 @@ const countValidArumgents = (filter: Filter) =>
 export const hasBackwardsArguments = (filter: Filter) => {
   const [lowerArgument, upperArgument] = filter.arguments();
   return lowerArgument > upperArgument;
+};
+
+const searchByDimensionName = (
+  option: DimensionOption,
+  searchQuery: string,
+): boolean =>
+  option?.dimension
+    ?.displayName()
+    ?.toLowerCase()
+    ?.includes(searchQuery?.toLowerCase());
+
+const searchBySegmentName = (
+  option: SegmentOption,
+  searchQuery: string,
+): boolean =>
+  "segments".includes(searchQuery?.toLowerCase()) ||
+  option?.name?.toLowerCase()?.includes(searchQuery?.toLowerCase());
+
+export const getSearchHits = (
+  searchQuery: string,
+  sections: FilterSection[],
+) => {
+  if (searchQuery === "") {
+    return null;
+  }
+
+  return sections
+    .flatMap(section => section.items)
+    .filter((option: DimensionOption | SegmentOption) =>
+      isDimensionOption(option)
+        ? searchByDimensionName(option, searchQuery)
+        : searchBySegmentName(option, searchQuery),
+    );
 };

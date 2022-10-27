@@ -1,12 +1,11 @@
 import React from "react";
 
-import { PLUGIN_LANDING_PAGE } from "metabase/plugins";
-
-import { Route } from "metabase/hoc/Title";
 import { Redirect, IndexRedirect, IndexRoute } from "react-router";
 import { routerActions } from "react-router-redux";
 import { UserAuthWrapper } from "redux-auth-wrapper";
 import { t } from "ttag";
+import { Route } from "metabase/hoc/Title";
+import { PLUGIN_LANDING_PAGE } from "metabase/plugins";
 
 import { loadCurrentUser } from "metabase/redux/user";
 import MetabaseSettings from "metabase/lib/settings";
@@ -43,6 +42,7 @@ import PulseEditApp from "metabase/pulse/containers/PulseEditApp";
 import SetupApp from "metabase/setup/containers/SetupApp";
 // new question
 import NewQueryOptions from "metabase/new_query/containers/NewQueryOptions";
+import NewDatasetOptions from "metabase/new_query/containers/NewDatasetOptions";
 
 import CreateDashboardModal from "metabase/components/CreateDashboardModal";
 
@@ -77,10 +77,8 @@ import getCollectionTimelineRoutes from "metabase/timelines/collections/routes";
 import PublicQuestion from "metabase/public/containers/PublicQuestion";
 import PublicDashboard from "metabase/public/containers/PublicDashboard";
 import ArchiveDashboardModal from "metabase/dashboard/containers/ArchiveDashboardModal";
-import DashboardHistoryModal from "metabase/dashboard/components/DashboardHistoryModal";
 import DashboardMoveModal from "metabase/dashboard/components/DashboardMoveModal";
 import DashboardCopyModal from "metabase/dashboard/components/DashboardCopyModal";
-import DashboardDetailsModal from "metabase/dashboard/components/DashboardDetailsModal";
 import { ModalRoute } from "metabase/hoc/ModalRoute";
 
 import HomePage from "metabase/home/homepage/containers/HomePage";
@@ -197,7 +195,7 @@ export const getRoutes = store => (
 
       {/* MAIN */}
       <Route component={IsAuthenticated}>
-        {/* The global all hands rotues, things in here are for all the folks */}
+        {/* The global all hands routes, things in here are for all the folks */}
         <Route
           path="/"
           component={HomePage}
@@ -232,10 +230,8 @@ export const getRoutes = store => (
           title={t`Dashboard`}
           component={DashboardApp}
         >
-          <ModalRoute path="history" modal={DashboardHistoryModal} />
           <ModalRoute path="move" modal={DashboardMoveModal} />
           <ModalRoute path="copy" modal={DashboardCopyModal} />
-          <ModalRoute path="details" modal={DashboardDetailsModal} />
           <ModalRoute path="archive" modal={ArchiveDashboardModal} />
         </Route>
 
@@ -255,12 +251,19 @@ export const getRoutes = store => (
 
         <Route path="/model">
           <IndexRoute component={QueryBuilder} />
+          <Route
+            path="new"
+            title={t`New Model`}
+            component={NewDatasetOptions}
+          />
           <Route path="notebook" component={QueryBuilder} />
           <Route path=":slug" component={QueryBuilder} />
           <Route path=":slug/notebook" component={QueryBuilder} />
           <Route path=":slug/query" component={QueryBuilder} />
           <Route path=":slug/metadata" component={QueryBuilder} />
           <Route path=":slug/:objectId" component={QueryBuilder} />
+          <Route path="query" component={QueryBuilder} />
+          <Route path="metadata" component={QueryBuilder} />
         </Route>
 
         <Route path="browse" component={BrowseApp}>
@@ -364,7 +367,7 @@ export const getRoutes = store => (
     <Route
       path="/_internal"
       getChildRoutes={(partialNextState, callback) =>
-        require.ensure([], function(require) {
+        require.ensure([], function (require) {
           callback(null, [require("metabase/internal/routes").default]);
         })
       }

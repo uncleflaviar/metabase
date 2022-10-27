@@ -5,9 +5,7 @@ export function openColumnOptions(column) {
 }
 
 export function renameColumn(oldName, newName) {
-  cy.findByDisplayValue(oldName)
-    .clear()
-    .type(newName);
+  cy.findByDisplayValue(oldName).clear().type(newName);
 }
 
 export function setColumnType(oldType, newType) {
@@ -21,15 +19,11 @@ export function mapColumnTo({ table, column } = {}) {
   cy.findByText("Database column this maps to")
     .closest(".Form-field")
     .findByTestId("select-button")
-    .click();
+    .click({ force: true });
 
-  popover()
-    .contains(table)
-    .click();
+  popover().contains(table).click();
 
-  popover()
-    .contains(column)
-    .click();
+  popover().contains(column).click();
 }
 
 export function setModelMetadata(modelId, callback) {

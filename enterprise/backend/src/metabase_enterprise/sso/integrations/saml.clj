@@ -19,6 +19,7 @@
   (:require [buddy.core.codecs :as codecs]
             [clojure.string :as str]
             [clojure.tools.logging :as log]
+            [java-time :as t]
             [medley.core :as m]
             [metabase-enterprise.sso.api.interface :as sso.i]
             [metabase-enterprise.sso.integrations.sso-settings :as sso-settings]
@@ -31,11 +32,10 @@
             [metabase.server.request.util :as request.u]
             [metabase.util :as u]
             [metabase.util.i18n :refer [trs tru]]
-            [ring.util.codec :as codec]
             [ring.util.response :as response]
             [saml20-clj.core :as saml]
             [schema.core :as s])
-  (:import java.util.UUID))
+  (:import [java.util Base64 UUID]))
 
 (defn- group-names->ids
   "Translate a user's group names to a set of MB group IDs using the configured mappings"
@@ -65,8 +65,8 @@
 (s/defn ^:private fetch-or-create-user! :- (s/maybe {:id UUID, s/Keyword s/Any})
   "Returns a Session for the given `email`. Will create the user if needed."
   [{:keys [first-name last-name email group-names user-attributes device-info]}]
-  (when-not (sso-settings/saml-configured?)
-    (throw (IllegalArgumentException. (tru "Can't create new SAML user when SAML is not configured"))))
+  (when-not (sso-settings/saml-enabled)
+    (throw (IllegalArgumentException. (tru "Can't create new SAML user when SAML is not enabled"))))
   (when-not email
     (throw (ex-info (str (tru "Invalid SAML configuration: could not find user email.")
                          " "
@@ -103,7 +103,7 @@
          :alias    key-name}))))
 
 (defn- check-saml-enabled []
-  (api/check (sso-settings/saml-configured?)
+  (api/check (sso-settings/saml-enabled)
     [400 (tru "SAML has not been enabled and/or configured")]))
 
 (defmethod sso.i/sso-get :saml
@@ -118,7 +118,7 @@
     (try
       (let [idp-url      (sso-settings/saml-identity-provider-uri)
             saml-request (saml/request
-                           {:request-id (str "id-" (java.util.UUID/randomUUID))
+                           {:request-id (str "id-" (UUID/randomUUID))
                             :sp-name    (sso-settings/saml-application-name)
                             :issuer     (sso-settings/saml-application-name)
                             :acs-url    (acs-url)
@@ -126,10 +126,10 @@
                             :credential (sp-cert-keystore-details)})
             relay-state  (saml/str->base64 redirect-url)]
         (saml/idp-redirect-response saml-request idp-url relay-state))
-    (catch Throwable e
-      (let [msg (trs "Error generating SAML request")]
-        (log/error e msg)
-        (throw (ex-info msg {:status-code 500} e)))))))
+     (catch Throwable e
+       (let [msg (trs "Error generating SAML request")]
+         (log/error e msg)
+         (throw (ex-info msg {:status-code 500} e)))))))
 
 (defn- validate-response [response]
   (let [idp-cert (or (sso-settings/saml-identity-provider-certificate)
@@ -166,9 +166,10 @@
                       {:status-code 401})))
     attrs))
 
-(defn- base64-decode [s]
+(defn- base64-decode [^String s]
   (when (u/base64-string? s)
-    (codecs/bytes->str (codec/base64-decode s))))
+    (codecs/bytes->str
+      (.decode (Base64/getMimeDecoder) s))))
 
 (defmethod sso.i/sso-post :saml
   ;; Does the verification of the IDP's response and 'logs the user in'. The attributes are available in the response:
@@ -180,7 +181,7 @@
                           (when-not (str/blank? s)
                             s)))]
     (sso-utils/check-sso-redirect continue-url)
-    (let [xml-string    (base64-decode (:SAMLResponse params))
+    (let [xml-string    (str/trim (base64-decode (:SAMLResponse params)))
           saml-response (xml-string->saml-response xml-string)
           attrs         (saml-response->attributes saml-response)
           email         (get attrs (sso-settings/saml-attribute-email))
@@ -195,4 +196,4 @@
                            :user-attributes attrs
                            :device-info     (request.u/device-info request)})
           response      (response/redirect (or continue-url (public-settings/site-url)))]
-      (mw.session/set-session-cookie request response session))))
+      (mw.session/set-session-cookies request response session (t/zoned-date-time (t/zone-id "GMT"))))))

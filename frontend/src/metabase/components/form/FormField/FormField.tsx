@@ -6,7 +6,7 @@ import {
   FormField as FormFieldType,
   BaseFieldDefinition,
   FormFieldDefinition,
-} from "metabase-types/forms";
+} from "metabase-types/forms/legacy";
 
 import FormFieldView from "./FormFieldView";
 
@@ -88,7 +88,12 @@ function FormField({
     return null;
   }
 
-  const { name, error: errorProp, visited, active } = {
+  const {
+    name,
+    error: errorProp,
+    visited,
+    active,
+  } = {
     ...(props.field || {}),
     ...props,
   };

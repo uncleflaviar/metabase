@@ -1,6 +1,7 @@
 import styled from "@emotion/styled";
 import { css } from "@emotion/react";
-import { color, darken } from "metabase/lib/colors";
+import { color } from "metabase/lib/colors";
+import { monospaceFontFamily, space } from "metabase/styled-components/theme";
 import IconButtonWrapper from "metabase/components/IconButtonWrapper";
 import { InputSize } from "./types";
 
@@ -10,6 +11,7 @@ export interface InputProps {
   fullWidth?: boolean;
   hasLeftIcon?: boolean;
   hasRightIcon?: boolean;
+  subtitle?: string;
 }
 
 export const InputRoot = styled.div<InputProps>`
@@ -25,13 +27,14 @@ export const InputField = styled.input<InputProps>`
   font-size: 1rem;
   color: ${color("text-dark")};
   padding: 0.75rem;
-  border: 1px solid ${darken("border", 0.1)};
-  border-radius: 4px;
+  border: 1px solid ${color("border")};
+  border-radius: ${space(1)};
   background-color: ${props => color(props.readOnly ? "bg-light" : "bg-white")};
   outline: none;
   text-align: inherit;
 
-  &:focus {
+  &:focus,
+  &:hover {
     border-color: ${() => color("brand")};
     transition: border 300ms ease-in-out;
   }
@@ -67,6 +70,12 @@ export const InputField = styled.input<InputProps>`
       line-height: 1rem;
       padding: 0.4375rem 0.625rem;
     `};
+
+  ${props =>
+    props.subtitle &&
+    css`
+      padding-top: 1.75rem;
+    `};
 `;
 
 export const InputButton = styled(IconButtonWrapper)`
@@ -82,4 +91,13 @@ export const InputLeftButton = styled(InputButton)`
 
 export const InputRightButton = styled(InputButton)`
   right: 0;
+`;
+
+export const InputSubtitle = styled.div`
+  color: ${color("text-light")};
+  position: absolute;
+  top: 1.25em;
+  left: 1.25em;
+  font-family: ${monospaceFontFamily};
+  font-size: 0.75em;
 `;

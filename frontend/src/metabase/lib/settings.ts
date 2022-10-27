@@ -1,8 +1,8 @@
 import _ from "underscore";
 import { t, ngettext, msgid } from "ttag";
+import moment from "moment-timezone";
 import { parseTimestamp } from "metabase/lib/time";
 import MetabaseUtils from "metabase/lib/utils";
-import moment from "moment";
 
 const n2w = (n: number) => MetabaseUtils.numberToWord(n);
 
@@ -66,16 +66,21 @@ export type SettingName =
   | "enable-enhancements?"
   | "enable-public-sharing"
   | "enable-xrays"
+  | "experimental-enable-actions"
   | "persisted-models-enabled"
   | "engines"
   | "ga-code"
   | "ga-enabled"
+  | "google-auth-enabled"
   | "google-auth-client-id"
   | "has-sample-database?"
   | "has-user-setup"
   | "hide-embed-branding?"
   | "is-hosted?"
+  | "ldap-enabled"
   | "ldap-configured?"
+  | "other-sso-enabled?"
+  | "enable-password-login"
   | "map-tile-server-url"
   | "password-complexity"
   | "persisted-model-refresh-interval-hours"
@@ -83,6 +88,8 @@ export type SettingName =
   | "search-typeahead-enabled"
   | "setup-token"
   | "site-url"
+  | "site-uuid"
+  | "token-status"
   | "types"
   | "version-info-last-checked"
   | "version-info"
@@ -95,9 +102,11 @@ export type SettingName =
   | "show-database-syncing-modal"
   | "premium-embedding-token"
   | "metabase-store-managed"
+  | "application-colors"
   | "application-font"
   | "available-fonts"
-  | "enable-query-caching";
+  | "enable-query-caching"
+  | "start-of-week";
 
 type SettingsMap = Record<SettingName, any>; // provides access to Metabase application settings
 
@@ -167,10 +176,6 @@ class Settings {
     return this.get("cloud-gateway-ips") || [];
   }
 
-  googleAuthEnabled() {
-    return this.get("google-auth-client-id") != null;
-  }
-
   hasUserSetup() {
     return this.get("has-user-setup");
   }
@@ -179,8 +184,33 @@ class Settings {
     return this.get("hide-embed-branding?");
   }
 
-  ldapEnabled() {
+  isGoogleAuthEnabled() {
+    return this.get("google-auth-enabled");
+  }
+
+  isLdapEnabled() {
+    return this.get("ldap-enabled");
+  }
+
+  isLdapConfigured() {
     return this.get("ldap-configured?");
+  }
+
+  // JWT or SAML is enabled
+  isOtherSsoEnabled() {
+    return this.get("other-sso-enabled?");
+  }
+
+  isSsoEnabled() {
+    return (
+      this.isLdapEnabled() ||
+      this.isGoogleAuthEnabled() ||
+      this.isOtherSsoEnabled()
+    );
+  }
+
+  isPasswordLoginEnabled() {
+    return this.get("enable-password-login");
   }
 
   searchTypeaheadEnabled() {

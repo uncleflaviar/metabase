@@ -66,8 +66,8 @@
   [f]
   (with-redefs [email/send-email! fake-inbox-email-fn]
     (reset-inbox!)
-    (tu/with-temporary-setting-values [email-smtp-host "fake_smtp_host"
-                                       email-smtp-port 587]
+    (tu/with-temporary-setting-values [email-smtp-host    "fake_smtp_host"
+                                       email-smtp-port    587]
       (f))))
 
 (defmacro with-fake-inbox
@@ -190,7 +190,9 @@
   "Creates a default email map for `user-kwd` via `test.users/fetch-user`, as would be returned by `with-fake-inbox`"
   [user-kwd & [email-map]]
   (let [{:keys [email]} (test.users/fetch-user user-kwd)]
-    {email [(merge {:from (email/email-from-address)
+    {email [(merge {:from (if-let [from-name (email/email-from-name)]
+                            (str from-name " <" (email/email-from-address) ">")
+                            (email/email-from-address))
                     :to #{email}}
                    email-map)]}))
 
@@ -202,7 +204,7 @@
 
 (defn mock-send-email!
   "To stub out email sending, instead returning the would-be email contents as a string"
-  [smtp-credentials email-details]
+  [_smtp-credentials email-details]
   (-> email-details
       message/make-jmessage
       message/message->str))

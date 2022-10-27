@@ -19,24 +19,24 @@
 ;; These modules register settings but are otherwise unused. They still must be imported.
 (comment metabase.public-settings.premium-features/keep-me)
 
-(defn- google-auth-configured? []
-  (boolean (setting/get :google-auth-client-id)))
+(defn- google-auth-enabled? []
+  (boolean (setting/get :google-auth-enabled)))
 
-(defn- ldap-configured? []
-  (classloader/require 'metabase.integrations.ldap)
-  ((resolve 'metabase.integrations.ldap/ldap-configured?)))
+(defn- ldap-enabled? []
+  (classloader/require 'metabase.api.ldap)
+  ((resolve 'metabase.api.ldap/ldap-enabled)))
 
 (defn- ee-sso-configured? []
   (u/ignore-exceptions
     (classloader/require 'metabase-enterprise.sso.integrations.sso-settings))
-  (when-let [varr (resolve 'metabase-enterprise.sso.integrations.sso-settings/other-sso-configured?)]
+  (when-let [varr (resolve 'metabase-enterprise.sso.integrations.sso-settings/other-sso-enabled?)]
     (varr)))
 
-(defn- sso-configured?
-  "Any SSO provider is configured"
+(defn sso-enabled?
+  "Any SSO provider is configured and enabled"
   []
-  (or (google-auth-configured?)
-      (ldap-configured?)
+  (or (google-auth-enabled?)
+      (ldap-enabled?)
       (ee-sso-configured?)))
 
 (defsetting check-for-updates
@@ -85,7 +85,7 @@
   ;; Don't i18n this docstring because it's not user-facing! :)
   "Unique identifier used for this instance of Metabase. This is set once and only once the first time it is fetched via
   its magic getter. Nice!"
-  :visibility :internal
+  :visibility :authenticated
   :setter     :none
   ;; magic getter will either fetch value from DB, or if no value exists, set the value to a random UUID.
   :type       ::uuid-nonce)
@@ -97,6 +97,13 @@
   in [[metabase.public-settings.premium-features/fetch-token-status]]. (`site-uuid` is used for anonymous
   analytics/stats and if we sent it along with the premium features token check API request it would no longer be
   anonymous.)"
+  :visibility :internal
+  :setter     :none
+  :type       ::uuid-nonce)
+
+(defsetting site-uuid-for-version-info-fetching
+  "A *different* site-wide UUID that we use for the version info fetching API calls. Do not use this for any other
+  applications. (See [[site-uuid-for-premium-features-token-checks]] for more reasoning.)"
   :visibility :internal
   :setter     :none
   :type       ::uuid-nonce)
@@ -175,7 +182,7 @@
   :visibility :public)
 
 (defsetting landing-page
-  (deferred-tru "Default page to show the user")
+  (deferred-tru "Default page to show people when they log in.")
   :visibility :public
   :type       :string
   :default    "")
@@ -213,16 +220,10 @@
   :default    false
   :visibility :authenticated)
 
-(defsetting persisted-model-refresh-interval-hours
-  (deferred-tru "Hour interval to refresh persisted models.")
-  :type       :integer
-  :default    6
-  :visibility :admin)
-
-(defsetting persisted-model-refresh-anchor-time
-  (deferred-tru "Anchor time to begin refreshing persisted models.")
+(defsetting persisted-model-refresh-cron-schedule
+  (deferred-tru "cron syntax string to schedule refreshing persisted models.")
   :type       :string
-  :default    "00:00"
+  :default    "0 0 0/6 * * ? *"
   :visibility :admin)
 
 (def ^:private ^:const global-max-caching-kb
@@ -292,21 +293,8 @@
   (deferred-tru "Message to show while a query is running.")
   :visibility :public
   :enabled?   premium-features/enable-whitelabeling?
-  :type       :keyword)
-
-(defsetting show-metabot
-  (deferred-tru "Enables Metabot character on the home page")
-  :visibility :public
-  :type       :boolean
-  :enabled?   premium-features/enable-whitelabeling?
-  :default    true)
-
-(defsetting application-colors-migrated
-  "Stores whether the `application-colors` setting has been migrated to 0.44 expectations"
-  :visibility :internal
-  :type       :boolean
-  :enabled?   premium-features/enable-whitelabeling?
-  :default false)
+  :type       :keyword
+  :default    :doing-science)
 
 (defsetting application-colors
   (deferred-tru
@@ -315,24 +303,10 @@
   :visibility :public
   :type       :json
   :enabled?   premium-features/enable-whitelabeling?
-  :default    {}
-  :getter (fn []
-            (let [current-colors (setting/get-value-of-type :json :application-colors)]
-              (if (application-colors-migrated)
-                current-colors
-                (let [{:keys [accent0 brand summarize accent1 filter accent7]} current-colors
-                      new-colors (cond-> current-colors
-                                   (and brand (not accent0))     (assoc :accent0 brand)
-                                   (and accent1 (not summarize)) (assoc :summarize accent1)
-                                   (and accent7 (not filter))    (assoc :filter accent7))]
-                  (setting/set-value-of-type! :json :application-colors new-colors)
-                  (application-colors-migrated! true)
-                  new-colors)))))
+  :default    {})
 
 (defsetting application-font
-  (deferred-tru
-   (str "This is the primary font used in charts and throughout Metabase. "
-        "You might need to refresh your browser to see your changes take effect."))
+  (deferred-tru "This will replace “Lato” as the font family.")
   :visibility :public
   :type       :string
   :default    "Lato"
@@ -342,6 +316,12 @@
                 (when-not (u.fonts/available-font? new-value)
                   (throw (ex-info (tru "Invalid font {0}" (pr-str new-value)) {:status-code 400}))))
               (setting/set-value-of-type! :string :application-font new-value)))
+
+(defsetting application-font-files
+  (deferred-tru "Tell us where to find the file for each font weight. You don’t need to include all of them, but it’ll look better if you do.")
+  :visibility :public
+  :type       :json
+  :enabled?   premium-features/enable-whitelabeling?)
 
 (defn application-color
   "The primary color, a.k.a. brand color"
@@ -367,6 +347,20 @@
   :enabled?   premium-features/enable-whitelabeling?
   :default    "app/assets/img/favicon.ico")
 
+(defsetting show-metabot
+  (deferred-tru "Enables Metabot character on the home page")
+  :visibility :public
+  :type       :boolean
+  :enabled?   premium-features/enable-whitelabeling?
+  :default    true)
+
+(defsetting show-lighthouse-illustration
+  (deferred-tru "Display the lighthouse illustration on the home and login pages.")
+  :visibility :public
+  :type       :boolean
+  :enabled?   premium-features/enable-whitelabeling?
+  :default    true)
+
 (defsetting enable-password-login
   (deferred-tru "Allow logging in by email and password.")
   :visibility :public
@@ -377,7 +371,7 @@
                 ;; otherwise this always returns true.
                 (let [v (setting/get-value-of-type :boolean :enable-password-login)]
                   (if (and (some? v)
-                           (sso-configured?))
+                           (sso-enabled?))
                     v
                     true))))
 

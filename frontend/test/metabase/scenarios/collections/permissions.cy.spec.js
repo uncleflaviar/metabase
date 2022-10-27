@@ -9,9 +9,8 @@ import {
   openCollectionMenu,
 } from "__support__/e2e/helpers";
 
-import { displaySidebarChildOf } from "./helpers/e2e-collections-sidebar.js";
-
 import { USERS } from "__support__/e2e/cypress_data";
+import { displaySidebarChildOf } from "./helpers/e2e-collections-sidebar.js";
 
 const PERMISSIONS = {
   curate: ["admin", "normal", "nodata"],
@@ -22,7 +21,6 @@ const PERMISSIONS = {
 describe("collection permissions", () => {
   beforeEach(() => {
     restore();
-    cy.server();
   });
 
   describe("item management", () => {
@@ -58,9 +56,7 @@ describe("collection permissions", () => {
                     appBar().within(() => {
                       cy.icon("add").click();
                     });
-                    popover()
-                      .findByText("Dashboard")
-                      .click();
+                    popover().findByText("Dashboard").click();
                     cy.findByTestId("select-button").findByText(
                       "Our analytics",
                     );
@@ -192,9 +188,7 @@ describe("collection permissions", () => {
                     navigationSidebar().within(() => {
                       cy.icon("ellipsis").click();
                     });
-                    popover()
-                      .findByText("View archive")
-                      .click();
+                    popover().findByText("View archive").click();
                     cy.location("pathname").should("eq", "/archive");
                     cy.findByText("Orders");
                   });
@@ -225,9 +219,7 @@ describe("collection permissions", () => {
 
                     openCollectionMenu();
                     popover().within(() => cy.findByText("Archive").click());
-                    cy.get(".Modal")
-                      .findByText("Archive")
-                      .click();
+                    cy.get(".Modal").findByText("Archive").click();
 
                     cy.wait("@editCollection");
 
@@ -260,7 +252,7 @@ describe("collection permissions", () => {
                     });
                   });
 
-                  it.skip("visiting already archived collection by its ID shouldn't let you edit it (metabase#12489)", () => {
+                  it("visiting already archived collection by its ID shouldn't let you edit it (metabase#12489)", () => {
                     cy.request("GET", "/api/collection").then(xhr => {
                       const { id: THIRD_COLLECTION_ID } = xhr.body.find(
                         collection => collection.slug === "third_collection",
@@ -316,9 +308,7 @@ describe("collection permissions", () => {
                       cy.visit(`/collection/${THIRD_COLLECTION_ID}`);
                       openCollectionMenu();
                       popover().within(() => cy.findByText("Archive").click());
-                      cy.get(".Modal")
-                        .findByText("Cancel")
-                        .click();
+                      cy.get(".Modal").findByText("Cancel").click();
                       cy.location("pathname").should(
                         "eq",
                         `/collection/${THIRD_COLLECTION_ID}-third-collection`,
@@ -364,9 +354,7 @@ describe("collection permissions", () => {
               const { first_name, last_name } = USERS[user];
               cy.visit("/collection/root");
               openEllipsisMenuFor("Orders in a dashboard");
-              popover()
-                .findByText("Duplicate")
-                .click();
+              popover().findByText("Duplicate").click();
               cy.findByTestId("select-button").findByText(
                 `${first_name} ${last_name}'s Personal Collection`,
               );
@@ -438,9 +426,7 @@ function openEllipsisMenuFor(item, index = 0) {
 }
 
 function clickButton(name) {
-  cy.findByRole("button", { name })
-    .should("not.be.disabled")
-    .click();
+  cy.findByRole("button", { name }).should("not.be.disabled").click();
 }
 
 function pinItem(item) {

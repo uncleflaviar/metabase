@@ -2,11 +2,10 @@ import _ from "underscore";
 
 import { startNewCard } from "metabase/lib/card";
 import { createThunkAction } from "metabase/lib/redux";
-import * as Q_DEPRECATED from "metabase/lib/query";
-
 import { MetabaseApi } from "metabase/services";
+import * as Q_DEPRECATED from "metabase-lib/queries/utils";
 
-import { FieldDimension } from "metabase-lib/lib/Dimension";
+import { FieldDimension } from "metabase-lib/Dimension";
 
 import {
   getCard,
@@ -20,13 +19,15 @@ import { setCardAndRun } from "./core";
 import { updateUrl } from "./navigation";
 
 export const ZOOM_IN_ROW = "metabase/qb/ZOOM_IN_ROW";
-export const zoomInRow = ({ objectId }) => (dispatch, getState) => {
-  dispatch({ type: ZOOM_IN_ROW, payload: { objectId } });
+export const zoomInRow =
+  ({ objectId }) =>
+  (dispatch, getState) => {
+    dispatch({ type: ZOOM_IN_ROW, payload: { objectId } });
 
-  // don't show object id in url if it is a row index
-  const hasPK = getPKColumnIndex(getState()) !== -1;
-  hasPK && dispatch(updateUrl(null, { objectId, replaceState: false }));
-};
+    // don't show object id in url if it is a row index
+    const hasPK = getPKColumnIndex(getState()) !== -1;
+    hasPK && dispatch(updateUrl(null, { objectId, replaceState: false }));
+  };
 
 export const RESET_ROW_ZOOM = "metabase/qb/RESET_ROW_ZOOM";
 export const resetRowZoom = () => dispatch => {

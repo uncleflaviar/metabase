@@ -1,13 +1,22 @@
-import { SAMPLE_DATABASE, ORDERS } from "__support__/sample_database_fixture";
+import {
+  SAMPLE_DATABASE,
+  ORDERS,
+  PEOPLE,
+} from "__support__/sample_database_fixture";
 
-import StructuredQuery from "metabase-lib/lib/queries/StructuredQuery";
-import Filter from "metabase-lib/lib/queries/structured/Filter";
+import StructuredQuery, {
+  isDimensionOption,
+  DimensionOption,
+  SegmentOption,
+} from "metabase-lib/queries/StructuredQuery";
+import Filter from "metabase-lib/queries/structured/Filter";
 
 import {
   fixBetweens,
   hasBackwardsArguments,
   swapFilterArguments,
   handleEmptyBetween,
+  getSearchHits,
 } from "./utils";
 
 const makeQuery = (query = {}): StructuredQuery => {
@@ -133,7 +142,7 @@ describe("BulkFilterModal utils", () => {
       expect(newFilter.operatorName()).toEqual("between");
     });
 
-    it("ignores non-betwee filters", () => {
+    it("ignores non-between filters", () => {
       const filter = new Filter(
         ["=", ["field", ORDERS.fields[1].id, null], 40, 50],
         null,
@@ -144,6 +153,24 @@ describe("BulkFilterModal utils", () => {
       const newFilter = newQuery.filters()[0];
       expect(newFilter.arguments()).toEqual([40, 50]);
       expect(newFilter.operatorName()).toEqual("=");
+    });
+
+    it("ignores between custom expressions", () => {
+      const filter = new Filter(
+        [
+          "between",
+          ["field", ORDERS.CREATED_AT.id, null],
+          ["field", PEOPLE.BIRTH_DATE.id, { "source-field": PEOPLE.ID.id }],
+          ["field", PEOPLE.CREATED_AT.id, { "source-field": PEOPLE.ID.id }],
+        ],
+        null,
+        query,
+      );
+
+      const newQuery = fixBetweens(filter.add());
+      const newFilter = newQuery.filters()[0];
+
+      expect(newFilter).toEqual(filter);
     });
 
     it("handles multiple invalid between filters", () => {
@@ -167,6 +194,42 @@ describe("BulkFilterModal utils", () => {
 
       expect(newFilter3.arguments()).toEqual([8, 9, 7]);
       expect(newFilter3.operatorName()).toEqual("=");
+    });
+  });
+
+  describe("getSearchHits", () => {
+    const query = makeQuery();
+    const sections = query.topLevelFilterFieldOptionSections();
+
+    const getHitFieldNames = (
+      hits: (DimensionOption | SegmentOption)[] | null,
+    ) => hits?.map(i => isDimensionOption(i) && i?.dimension?.displayName());
+
+    it("hits on a field name", () => {
+      const hits = getSearchHits("product", sections);
+      const hitFieldNames = getHitFieldNames(hits);
+
+      expect(hitFieldNames).toEqual(["Product ID"]);
+    });
+
+    it("hits on field names regardless of case", () => {
+      const hits = getSearchHits("toTA", sections);
+      const hitFieldNames = getHitFieldNames(hits);
+
+      expect(hitFieldNames).toEqual(["Subtotal", "Total"]);
+    });
+
+    it("hits on field names from multiple tables", () => {
+      const hits = getSearchHits("ID", sections);
+      const hitFieldNames = getHitFieldNames(hits);
+
+      expect(hitFieldNames).toEqual([
+        "ID",
+        "Product ID",
+        "User ID",
+        "ID",
+        "ID",
+      ]);
     });
   });
 });

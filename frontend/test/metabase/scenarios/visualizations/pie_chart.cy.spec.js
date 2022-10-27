@@ -19,7 +19,6 @@ describe("scenarios > visualizations > pie chart", () => {
   beforeEach(() => {
     restore();
     cy.signInAsNormalUser();
-    cy.server();
   });
 
   it("should render a pie chart (metabase#12506)", () => {
@@ -43,9 +42,7 @@ function ensurePieChartRendered(rows, totalValue) {
 
     // legend
     rows.forEach((name, i) => {
-      cy.get(".LegendItem")
-        .contains(name)
-        .should("be.visible");
+      cy.get(".LegendItem").contains(name).should("be.visible");
     });
   });
 }

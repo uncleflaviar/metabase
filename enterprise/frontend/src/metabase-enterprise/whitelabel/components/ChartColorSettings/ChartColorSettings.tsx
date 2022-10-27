@@ -1,11 +1,12 @@
 import React, { memo, useCallback, useMemo } from "react";
 import { t } from "ttag";
-import { flatten, omit, set } from "lodash";
+import _ from "underscore";
 import { color } from "metabase/lib/colors";
 import { useCurrentRef } from "metabase/hooks/use-current-ref";
 import Button from "metabase/core/components/Button";
 import ColorPicker from "metabase/core/components/ColorPicker";
 import ModalWithTrigger from "metabase/components/ModalWithTrigger";
+import ColorResetModal from "metabase-enterprise/whitelabel/components/ColorResetModal";
 import {
   getAutoChartColors,
   getChartColorGroups,
@@ -21,7 +22,6 @@ import {
   TableLink,
   TableTitle,
 } from "./ChartColorSettings.styled";
-import ColorResetModal from "metabase-enterprise/whitelabel/components/ColorResetModal";
 
 export interface ChartColorSettingsProps {
   colors: Record<string, string>;
@@ -44,9 +44,9 @@ const ChartColorSettings = ({
   const handleChange = useCallback(
     (colorName: string, color?: string) => {
       if (color) {
-        onChange(set({ ...colorsRef.current }, colorName, color));
+        onChange({ ...colorsRef.current, [colorName]: color });
       } else {
-        onChange(omit({ ...colorsRef.current }, colorName));
+        onChange(_.omit(colorsRef.current, colorName));
       }
     },
     [colorsRef, onChange],

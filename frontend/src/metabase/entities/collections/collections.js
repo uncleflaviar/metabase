@@ -1,18 +1,15 @@
+import { t } from "ttag";
 import _ from "underscore";
-import { createEntity, undo } from "metabase/lib/entities";
-
-import * as Urls from "metabase/lib/urls";
-
-import { CollectionSchema } from "metabase/schema";
 import { createSelector } from "reselect";
 
 import { GET } from "metabase/lib/api";
+import { createEntity, undo } from "metabase/lib/entities";
+import * as Urls from "metabase/lib/urls";
 
+import { CollectionSchema } from "metabase/schema";
 import { getUser, getUserPersonalCollectionId } from "metabase/selectors/user";
-import { canonicalCollectionId } from "metabase/collections/utils";
 
-import { findLast } from "lodash";
-import { t } from "ttag";
+import { canonicalCollectionId } from "metabase/collections/utils";
 
 import {
   ROOT_COLLECTION,
@@ -91,25 +88,33 @@ const Collections = createEntity({
     getInitialCollectionId: createSelector(
       [
         state => state.entities.collections,
+        getUserPersonalCollectionId,
 
         // these are listed in order of priority
         byCollectionIdProp,
         byCollectionIdNavParam,
         byCollectionUrlId,
         byCollectionQueryParameter,
-
-        // defaults
-        () => ROOT_COLLECTION.id,
-        getUserPersonalCollectionId,
       ],
-      (collections, ...collectionIds) => {
-        for (const collectionId of collectionIds) {
+      (collections, personalId, ...collectionIds) => {
+        const allCollectionIds = [
+          ...collectionIds,
+          ROOT_COLLECTION.id,
+          personalId,
+        ];
+
+        for (const collectionId of allCollectionIds) {
           const collection = collections[collectionId];
           if (collection && collection.can_write) {
             return canonicalCollectionId(collectionId);
           }
         }
-        return canonicalCollectionId(ROOT_COLLECTION.id);
+
+        const rootCollection = collections[ROOT_COLLECTION.id];
+
+        return rootCollection?.can_write
+          ? canonicalCollectionId(ROOT_COLLECTION.id)
+          : canonicalCollectionId(personalId);
       },
     ),
   },
@@ -152,6 +157,9 @@ export function getExpandedCollectionsById(
   // "Our Analytics"
   collectionsById[ROOT_COLLECTION.id] = {
     ...ROOT_COLLECTION,
+    name: collectionsById[ROOT_COLLECTION.id]
+      ? ROOT_COLLECTION.name
+      : t`Collections`,
     parent: null,
     children: [],
     ...(collectionsById[ROOT_COLLECTION.id] || {}),
@@ -192,7 +200,8 @@ export function getExpandedCollectionsById(
         parentId = PERSONAL_COLLECTIONS.id;
       } else {
         // Find the closest parent that the user has permissions for
-        parentId = findLast(c.path, p => collectionsById[p]);
+        const parentIdIndex = _.findLastIndex(c.path, p => collectionsById[p]);
+        parentId = parentIdIndex >= 0 ? c.path[parentIdIndex] : undefined;
       }
       if (!parentId) {
         parentId = ROOT_COLLECTION.id;

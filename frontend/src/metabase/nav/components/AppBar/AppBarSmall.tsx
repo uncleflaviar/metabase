@@ -1,14 +1,16 @@
 import React, { useCallback, useState } from "react";
-import { CollectionId } from "metabase-types/api";
-import AppBarLogo from "./AppBarLogo";
-import AppBarToggle from "./AppBarToggle";
+import { User } from "metabase-types/api";
 import SearchBar from "../SearchBar";
+import ProfileLink from "../ProfileLink";
 import CollectionBreadcrumbs from "../../containers/CollectionBreadcrumbs";
 import QuestionLineage from "../../containers/QuestionLineage";
+import AppBarToggle from "./AppBarToggle";
+import AppBarLogo from "./AppBarLogo";
 import {
   AppBarHeader,
   AppBarLogoContainer,
   AppBarMainContainer,
+  AppBarProfileLinkContainer,
   AppBarRoot,
   AppBarSearchContainer,
   AppBarSubheader,
@@ -16,25 +18,29 @@ import {
 } from "./AppBarSmall.styled";
 
 export interface AppBarSmallProps {
-  collectionId?: CollectionId;
+  currentUser: User;
   isNavBarOpen?: boolean;
   isNavBarVisible?: boolean;
   isSearchVisible?: boolean;
+  isProfileLinkVisible?: boolean;
   isCollectionPathVisible?: boolean;
   isQuestionLineageVisible?: boolean;
   onToggleNavbar: () => void;
   onCloseNavbar: () => void;
+  onLogout: () => void;
 }
 
 const AppBarSmall = ({
-  collectionId,
+  currentUser,
   isNavBarOpen,
   isNavBarVisible,
   isSearchVisible,
+  isProfileLinkVisible,
   isCollectionPathVisible,
   isQuestionLineageVisible,
   onToggleNavbar,
   onCloseNavbar,
+  onLogout,
 }: AppBarSmallProps): JSX.Element => {
   const [isSearchActive, setSearchActive] = useState(false);
   const isInfoVisible = isQuestionLineageVisible || isCollectionPathVisible;
@@ -73,17 +79,22 @@ const AppBarSmall = ({
               />
             )}
           </AppBarSearchContainer>
+          {isProfileLinkVisible && (
+            <AppBarProfileLinkContainer>
+              <ProfileLink user={currentUser} onLogout={onLogout} />
+            </AppBarProfileLinkContainer>
+          )}
         </AppBarMainContainer>
         <AppBarLogoContainer isVisible={!isSearchActive}>
           <AppBarLogo onLogoClick={handleLogoClick} />
         </AppBarLogoContainer>
       </AppBarHeader>
       {isSubheaderVisible && (
-        <AppBarSubheader>
+        <AppBarSubheader isNavBarOpen={isNavBarOpen}>
           {isQuestionLineageVisible ? (
             <QuestionLineage />
           ) : isCollectionPathVisible ? (
-            <CollectionBreadcrumbs collectionId={collectionId} />
+            <CollectionBreadcrumbs />
           ) : null}
         </AppBarSubheader>
       )}

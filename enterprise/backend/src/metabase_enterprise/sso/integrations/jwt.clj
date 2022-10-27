@@ -2,6 +2,7 @@
   "Implementation of the JWT backend for sso"
   (:require [buddy.sign.jwt :as jwt]
             [clojure.string :as str]
+            [java-time :as t]
             [metabase-enterprise.sso.api.interface :as sso.i]
             [metabase-enterprise.sso.integrations.sso-settings :as sso-settings]
             [metabase-enterprise.sso.integrations.sso-utils :as sso-utils]
@@ -17,7 +18,7 @@
 (defn fetch-or-create-user!
   "Returns a session map for the given `email`. Will create the user if needed."
   [first-name last-name email user-attributes]
-  (when-not (sso-settings/jwt-configured?)
+  (when-not (sso-settings/jwt-enabled)
     (throw (IllegalArgumentException. (str (tru "Can't create new JWT user when JWT is not configured")))))
   (let [user {:first_name       first-name
               :last_name        last-name
@@ -86,10 +87,10 @@
           user         (fetch-or-create-user! first-name last-name email login-attrs)
           session      (api.session/create-session! :sso user (request.u/device-info request))]
       (sync-groups! user jwt-data)
-      (mw.session/set-session-cookie request (response/redirect redirect-url) session))))
+      (mw.session/set-session-cookies request (response/redirect redirect-url) session (t/zoned-date-time (t/zone-id "GMT"))))))
 
 (defn- check-jwt-enabled []
-  (api/check (sso-settings/jwt-configured?)
+  (api/check (sso-settings/jwt-enabled)
     [400 (tru "JWT SSO has not been enabled and/or configured")]))
 
 (defmethod sso.i/sso-get :jwt
@@ -100,7 +101,7 @@
     (let [idp (sso-settings/jwt-identity-provider-uri)
           return-to-param (if (str/includes? idp "?") "&return_to=" "?return_to=")]
       (response/redirect (str idp (when redirect
-                                (str return-to-param redirect)))))))
+                                   (str return-to-param redirect)))))))
 
 (defmethod sso.i/sso-post :jwt
   [_]

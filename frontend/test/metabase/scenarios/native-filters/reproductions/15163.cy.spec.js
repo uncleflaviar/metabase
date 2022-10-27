@@ -56,8 +56,8 @@ const dashboardFilter = {
                   card_id,
                   row: 0,
                   col: 0,
-                  sizeX: 10,
-                  sizeY: 8,
+                  size_x: 10,
+                  size_y: 8,
                   series: [],
                   visualization_settings: {
                     "card.title": "New Title",
@@ -77,7 +77,7 @@ const dashboardFilter = {
           if (test === "nosql") {
             cy.updatePermissionsGraph({
               [COLLECTION_GROUP]: {
-                "1": { data: { schemas: "all", native: "none" } },
+                1: { data: { schemas: "all", native: "none" } },
               },
             });
           }

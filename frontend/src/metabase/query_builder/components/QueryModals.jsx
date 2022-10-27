@@ -1,8 +1,12 @@
 /* eslint-disable react/prop-types */
 import React from "react";
+import { connect } from "react-redux";
 
 import { t } from "ttag";
 import _ from "underscore";
+
+import Questions from "metabase/entities/questions";
+import { ROOT_COLLECTION } from "metabase/entities/collections";
 
 import { MODAL_TYPES } from "metabase/query_builder/constants";
 
@@ -25,8 +29,13 @@ import BulkFilterModal from "metabase/query_builder/components/filters/modals/Bu
 import NewEventModal from "metabase/timelines/questions/containers/NewEventModal";
 import EditEventModal from "metabase/timelines/questions/containers/EditEventModal";
 import MoveEventModal from "metabase/timelines/questions/containers/MoveEventModal";
+import QuestionMoveToast from "./QuestionMoveToast";
 
-export default class QueryModals extends React.Component {
+const mapDispatchToProps = {
+  setQuestionCollection: Questions.actions.setCollection,
+};
+
+class QueryModals extends React.Component {
   showAlertsAfterQuestionSaved = () => {
     const { questionAlerts, user, onCloseModal, onOpenModal } = this.props;
 
@@ -45,13 +54,20 @@ export default class QueryModals extends React.Component {
     }
   };
 
+  onQueryChange = query => {
+    const question = query.question();
+    this.props.updateQuestion(question, { run: true });
+  };
+
   render() {
     const {
       modal,
       modalContext,
       question,
+      initialCollectionId,
       onCloseModal,
       onOpenModal,
+      setQueryBuilderMode,
     } = this.props;
 
     return modal === MODAL_TYPES.SAVE ? (
@@ -68,7 +84,12 @@ export default class QueryModals extends React.Component {
           }}
           onCreate={async card => {
             await this.props.onCreate(card);
-            onOpenModal(MODAL_TYPES.SAVED);
+            if (question.isDataset()) {
+              onCloseModal();
+              setQueryBuilderMode("view");
+            } else {
+              onOpenModal(MODAL_TYPES.SAVED);
+            }
           }}
           onClose={onCloseModal}
         />
@@ -155,8 +176,12 @@ export default class QueryModals extends React.Component {
         />
       </Modal>
     ) : modal === MODAL_TYPES.FILTERS ? (
-      <Modal onClose={onCloseModal}>
-        <BulkFilterModal question={question} onClose={onCloseModal} />
+      <Modal fit onClose={onCloseModal}>
+        <BulkFilterModal
+          question={question}
+          onQueryChange={this.onQueryChange}
+          onClose={onCloseModal}
+        />
       </Modal>
     ) : modal === MODAL_TYPES.HISTORY ? (
       <Modal onClose={onCloseModal}>
@@ -176,11 +201,21 @@ export default class QueryModals extends React.Component {
           initialCollectionId={question.collectionId()}
           onClose={onCloseModal}
           onMove={collection => {
-            const card = question
-              .setCollectionId(collection && collection.id)
-              .card();
-
-            this.props.onSave(card);
+            this.props.setQuestionCollection(
+              { id: question.id() },
+              collection,
+              {
+                notify: {
+                  message: (
+                    <QuestionMoveToast
+                      isModel={question.isDataset()}
+                      collectionId={collection.id || ROOT_COLLECTION.id}
+                    />
+                  ),
+                  undo: false,
+                },
+              },
+            );
             onCloseModal();
           }}
         />
@@ -197,13 +232,17 @@ export default class QueryModals extends React.Component {
       <Modal onClose={onCloseModal}>
         <EntityCopyModal
           entityType="questions"
-          entityObject={this.props.card}
+          entityObject={{
+            ...question.card(),
+            collection_id: question.canWrite()
+              ? question.collectionId()
+              : initialCollectionId,
+          }}
           copy={async formValues => {
             const object = await this.props.onCreate({
-              ...this.props.card,
+              ...question.card(),
               ...formValues,
               description: formValues.description || null,
-              collection_position: null,
             });
             return { payload: { object } };
           }}
@@ -242,3 +281,5 @@ export default class QueryModals extends React.Component {
     ) : null;
   }
 }
+
+export default connect(null, mapDispatchToProps)(QueryModals);

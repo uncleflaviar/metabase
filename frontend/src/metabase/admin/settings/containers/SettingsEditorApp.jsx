@@ -5,18 +5,16 @@ import { Link } from "react-router";
 import { connect } from "react-redux";
 import { t } from "ttag";
 
+import _ from "underscore";
+import cx from "classnames";
 import title from "metabase/hoc/Title";
 import * as MetabaseAnalytics from "metabase/lib/analytics";
 import MetabaseSettings from "metabase/lib/settings";
 import AdminLayout from "metabase/components/AdminLayout";
 import { NotFound } from "metabase/containers/ErrorPages";
 
-import SettingsSetting from "../components/SettingsSetting";
-
 import { prepareAnalyticsValue } from "metabase/admin/settings/utils";
-
-import _ from "underscore";
-import cx from "classnames";
+import SettingsSetting from "../components/SettingsSetting";
 
 import {
   getSettings,
@@ -136,12 +134,8 @@ class SettingsEditorApp extends Component {
   };
 
   renderSettingsPane() {
-    const {
-      activeSection,
-      settings,
-      settingValues,
-      derivedSettingValues,
-    } = this.props;
+    const { activeSection, settings, settingValues, derivedSettingValues } =
+      this.props;
     const isLoading = settings.length === 0;
 
     if (isLoading) {

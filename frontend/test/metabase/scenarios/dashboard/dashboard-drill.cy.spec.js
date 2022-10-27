@@ -42,16 +42,12 @@ describe("scenarios > dashboard > dashboard drill", () => {
 
     // set the url and text template
     modal().within(() => {
-      cy.get("input")
-        .first()
-        .type("/foo/{{my_number}}/{{my_param}}", {
-          parseSpecialCharSequences: false,
-        });
-      cy.get("input")
-        .last()
-        .type("column value: {{my_number}}", {
-          parseSpecialCharSequences: false,
-        });
+      cy.get("input").first().type("/foo/{{my_number}}/{{my_param}}", {
+        parseSpecialCharSequences: false,
+      });
+      cy.get("input").last().type("column value: {{my_number}}", {
+        parseSpecialCharSequences: false,
+      });
       cy.findByText("Done").click();
     });
 
@@ -146,9 +142,7 @@ describe("scenarios > dashboard > dashboard drill", () => {
       },
     );
 
-    cy.findAllByText("18")
-      .first()
-      .click();
+    cy.findAllByText("18").first().click();
     cy.location("pathname").should("eq", "/test/18/CO/Organic");
   });
 
@@ -172,9 +166,10 @@ describe("scenarios > dashboard > dashboard drill", () => {
     popover().within(() => cy.findByText("My Param").click());
 
     // set the text template
-    cy.findByPlaceholderText(
-      "E.x. Details for {{Column Name}}",
-    ).type("num: {{my_number}}", { parseSpecialCharSequences: false });
+    cy.findByPlaceholderText("E.x. Details for {{Column Name}}").type(
+      "num: {{my_number}}",
+      { parseSpecialCharSequences: false },
+    );
     cy.findByText("Save").click();
 
     // wait to leave editing mode and set a param value
@@ -225,9 +220,10 @@ describe("scenarios > dashboard > dashboard drill", () => {
     popover().within(() => cy.findByText("MY_STRING").click());
 
     // set the text template
-    cy.findByPlaceholderText(
-      "E.x. Details for {{Column Name}}",
-    ).type("text: {{my_string}}", { parseSpecialCharSequences: false });
+    cy.findByPlaceholderText("E.x. Details for {{Column Name}}").type(
+      "text: {{my_string}}",
+      { parseSpecialCharSequences: false },
+    );
     cy.findByText("Save").click();
 
     // click on table value
@@ -256,12 +252,8 @@ describe("scenarios > dashboard > dashboard drill", () => {
     cy.findByText("URL").click();
 
     modal().within(() => {
-      cy.get("input")
-        .first()
-        .type("/dashboard/2?my_param=Aaron Hand");
-      cy.get("input")
-        .last()
-        .type("Click behavior");
+      cy.get("input").first().type("/dashboard/2?my_param=Aaron Hand");
+      cy.get("input").last().type("Click behavior");
       cy.findByText("Done").click();
     });
 
@@ -338,8 +330,8 @@ describe("scenarios > dashboard > dashboard drill", () => {
                 card_id,
                 row: 0,
                 col: 0,
-                sizeX: 8,
-                sizeY: 6,
+                size_x: 8,
+                size_y: 6,
                 parameter_mappings: [
                   {
                     parameter_id: filter.id,
@@ -399,8 +391,8 @@ describe("scenarios > dashboard > dashboard drill", () => {
           card_id: 1,
           row: 0,
           col: 0,
-          sizeX: 12,
-          sizeY: 8,
+          size_x: 12,
+          size_y: 8,
           parameter_mappings: [
             {
               parameter_id: FILTER_ID,
@@ -421,15 +413,9 @@ describe("scenarios > dashboard > dashboard drill", () => {
     });
 
     visitDashboard(1);
-    cy.findAllByTestId("column-header")
-      .contains("ID")
-      .click()
-      .click();
+    cy.findAllByTestId("column-header").contains("ID").click().click();
 
-    cy.get(".Table-ID")
-      .contains(PK_VALUE)
-      .first()
-      .click();
+    cy.get(".Table-ID").contains(PK_VALUE).first().click();
 
     cy.wait("@dataset");
 
@@ -466,8 +452,8 @@ describe("scenarios > dashboard > dashboard drill", () => {
           card_id: 1,
           row: 0,
           col: 0,
-          sizeX: 12,
-          sizeY: 8,
+          size_x: 12,
+          size_y: 8,
           parameter_mappings: [
             {
               parameter_id: FILTER_ID,
@@ -486,8 +472,7 @@ describe("scenarios > dashboard > dashboard drill", () => {
         },
       ],
     });
-    cy.server();
-    cy.route("POST", "/api/dataset").as("dataset");
+    cy.intercept("POST", "/api/dataset").as("dataset");
 
     visitDashboard(1);
     // Product ID in the first row (query fails for User ID as well)
@@ -540,8 +525,8 @@ describe("scenarios > dashboard > dashboard drill", () => {
                 card_id: QUESTION_ID,
                 row: 0,
                 col: 0,
-                sizeX: 14,
-                sizeY: 10,
+                size_x: 14,
+                size_y: 10,
                 series: [],
                 // Set "Click behavior"
                 visualization_settings: {
@@ -652,8 +637,8 @@ describe("scenarios > dashboard > dashboard drill", () => {
                 card_id: QUESTION_ID,
                 row: 0,
                 col: 0,
-                sizeX: 10,
-                sizeY: 6,
+                size_x: 10,
+                size_y: 6,
                 series: [],
                 visualization_settings: {
                   column_settings: {
@@ -736,8 +721,8 @@ describe("scenarios > dashboard > dashboard drill", () => {
                 card_id: QUESTION_ID,
                 row: 0,
                 col: 0,
-                sizeX: 14,
-                sizeY: 10,
+                size_x: 14,
+                size_y: 10,
                 series: [],
                 visualization_settings: {},
                 parameter_mappings: [
@@ -807,8 +792,8 @@ describe("scenarios > dashboard > dashboard drill", () => {
                   card_id: QUESTION1_ID,
                   row: 0,
                   col: 0,
-                  sizeX: 12,
-                  sizeY: 8,
+                  size_x: 12,
+                  size_y: 8,
                   series: [
                     {
                       id: QUESTION2_ID,
@@ -823,18 +808,14 @@ describe("scenarios > dashboard > dashboard drill", () => {
 
           visitDashboard(DASHBOARD_ID);
 
-          cy.get(".bar")
-            .first()
-            .trigger("mousemove");
+          cy.get(".bar").first().trigger("mousemove");
 
           popover().within(() => {
             testPairedTooltipValues("AXIS", "1");
             testPairedTooltipValues("VALUE", "5");
           });
 
-          cy.get(".bar")
-            .last()
-            .trigger("mousemove");
+          cy.get(".bar").last().trigger("mousemove");
 
           popover().within(() => {
             testPairedTooltipValues("AXIS", "1");
@@ -878,8 +859,8 @@ describe("scenarios > dashboard > dashboard drill", () => {
             card_id: 1,
             row: 0,
             col: 0,
-            sizeX: 12,
-            sizeY: 8,
+            size_x: 12,
+            size_y: 8,
             series: [],
             visualization_settings: {},
             parameter_mappings: [
@@ -936,9 +917,7 @@ describe("scenarios > dashboard > dashboard drill", () => {
     });
 
     function setFilterValue(filterName) {
-      filterWidget()
-        .contains(filterName)
-        .click();
+      filterWidget().contains(filterName).click();
       cy.findByPlaceholderText("Enter an ID").type("1,2,");
       cy.button("Add filter").click();
       cy.findByText("2 selections");
@@ -1011,8 +990,8 @@ function createDashboard(
               card_id: questionId,
               row: 0,
               col: 0,
-              sizeX: 6,
-              sizeY: 6,
+              size_x: 6,
+              size_y: 6,
               parameter_mappings: [
                 {
                   parameter_id: "e8f79be9",
@@ -1045,15 +1024,10 @@ function setParamValue(paramName, text) {
 }
 
 function drillThroughCardTitle(title) {
-  cy.findByTestId("legend-caption")
-    .contains(title)
-    .click();
+  cy.findByTestId("legend-caption").contains(title).click();
   cy.contains(`Started from ${title}`);
 }
 
 function testPairedTooltipValues(val1, val2) {
-  cy.contains(val1)
-    .closest("td")
-    .siblings("td")
-    .findByText(val2);
+  cy.contains(val1).closest("td").siblings("td").findByText(val2);
 }

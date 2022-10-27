@@ -7,9 +7,11 @@ import {
   visitIframe,
 } from "__support__/e2e/helpers";
 
-const embeddingPage = "/admin/settings/embedding_in_other_applications";
+const embeddingPage = "/admin/settings/embedding-in-other-applications";
 const licenseUrl = "https://metabase.com/license/embedding";
 const upgradeUrl = "https://www.metabase.com/upgrade/";
+const learnEmbeddingUrl =
+  "https://www.metabase.com/learn/embedding/embedding-charts-and-dashboards.html";
 
 const licenseExplanations = [
   `When you embed charts or dashboards from Metabase in your own application, that application isn't subject to the Affero General Public License that covers the rest of Metabase, provided you keep the Metabase logo and the "Powered by Metabase" visible on those embeds.`,
@@ -52,6 +54,11 @@ describe("scenarios > embedding > smoke tests", () => {
 
       // Let's examine the contents of the enabled embedding page (the url stays the same)
       cy.location("pathname").should("eq", embeddingPage);
+
+      cy.contains(
+        "Allow questions, dashboards, and more to be embedded. Learn more.",
+      );
+      assertLinkMatchesUrl("Learn more.", learnEmbeddingUrl);
       cy.findByText("Enabled");
 
       cy.findByText("Standalone embeds").click();
@@ -60,7 +67,7 @@ describe("scenarios > embedding > smoke tests", () => {
           "In order to remove the Metabase logo from embeds, you can always upgrade to one of our paid plans.",
         );
 
-        assertLinkMatchesUrl("paid plans.", upgradeUrl);
+        assertLinkMatchesUrl("one of our paid plans.", upgradeUrl);
       }
 
       cy.findByText(/Embedding secret key/i);
@@ -222,9 +229,7 @@ function getTokenValue() {
 }
 
 function enableSharing() {
-  cy.contains("Enable sharing")
-    .siblings()
-    .click();
+  cy.contains("Enable sharing").siblings().click();
 }
 
 function assertLinkMatchesUrl(text, url) {
@@ -235,30 +240,26 @@ function assertLinkMatchesUrl(text, url) {
 
 function ensureEmbeddingIsDisabled() {
   // This is implicit assertion - it would've failed if embedding was enabled
-  cy.findByText(/Embed this (question|dashboard) in an application/).closest(
-    ".disabled",
-  );
+  cy.findByText(/Embed in your application/).closest(".disabled");
 
   // Let's make sure embedding stays disabled after we enable public sharing
   enableSharing();
 
-  cy.findByText(/Embed this (question|dashboard) in an application/).closest(
-    ".disabled",
-  );
+  cy.findByText(/Embed in your application/).closest(".disabled");
 }
 
 function visitAndEnableSharing(object) {
   if (object === "question") {
     visitQuestion("1");
     cy.icon("share").click();
-    cy.findByText(/Embed this (question|dashboard) in an application/).click();
+    cy.findByText(/Embed in your application/).click();
   }
 
   if (object === "dashboard") {
     visitDashboard(1);
 
     cy.icon("share").click();
-    cy.findByText(/Embed this (question|dashboard) in an application/).click();
+    cy.findByText(/Embed in your application/).click();
   }
 }
 

@@ -3,13 +3,13 @@
 import _ from "underscore";
 import { getIn } from "icepick";
 
-import { datasetContainsNoResults } from "metabase/lib/dataset";
 import { parseTimestamp } from "metabase/lib/time";
 import {
   NULL_DISPLAY_VALUE,
   NULL_NUMERIC_VALUE,
   TOTAL_ORDINAL_VALUE,
 } from "metabase/lib/constants";
+import { datasetContainsNoResults } from "metabase-lib/queries/utils/dataset";
 
 import {
   computeTimeseriesDataInverval,
@@ -325,8 +325,8 @@ export function getXInterval({ settings, series }, xValues, warn) {
   } else if (isQuantitative(settings) || isHistogram(settings)) {
     // Get the bin width from binning_info, if available
     // TODO: multiseries?
-    const binningInfo = getFirstNonEmptySeries(series).data.cols[0]
-      .binning_info;
+    const binningInfo =
+      getFirstNonEmptySeries(series).data.cols[0].binning_info;
     if (binningInfo) {
       return binningInfo.bin_width;
     }

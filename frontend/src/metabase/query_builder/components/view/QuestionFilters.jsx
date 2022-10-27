@@ -8,15 +8,14 @@ import PopoverWithTrigger from "metabase/components/PopoverWithTrigger";
 
 import { MODAL_TYPES } from "metabase/query_builder/constants";
 import FilterPopover from "metabase/query_builder/components/filters/FilterPopover";
+import { color } from "metabase/lib/colors";
 import ViewPill from "./ViewPill";
-import ViewButton from "./ViewButton";
+
 import {
   HeaderButton,
   FilterHeaderContainer,
   FilterHeaderButton,
 } from "./ViewHeader.styled";
-
-import { color } from "metabase/lib/colors";
 
 const FilterPill = props => <ViewPill color={color("filter")} {...props} />;
 
@@ -26,12 +25,14 @@ export default function QuestionFilters({
   expanded,
   onExpand,
   onCollapse,
+  onQueryChange,
 }) {
   const query = question.query();
   const filters = query.topLevelFilters();
   if (filters.length === 0) {
     return null;
   }
+
   return (
     <div className={className}>
       <div className="flex flex-wrap align-center mbn1 mrn1">
@@ -57,7 +58,7 @@ export default function QuestionFilters({
               key={index}
               triggerElement={
                 <FilterPill
-                  onRemove={() => filter.remove().update(null, { run: true })}
+                  onRemove={() => onQueryChange(filter.remove().rootQuery())}
                 >
                   {filter.displayName()}
                 </FilterPill>
@@ -70,7 +71,7 @@ export default function QuestionFilters({
                 query={query}
                 filter={filter}
                 onChangeFilter={newFilter =>
-                  newFilter.replace().update(null, { run: true })
+                  onQueryChange(newFilter.replace().rootQuery())
                 }
                 className="scroll-y"
               />
@@ -87,6 +88,7 @@ export function FilterHeaderToggle({
   onExpand,
   expanded,
   onCollapse,
+  onQueryChange,
 }) {
   const query = question.query();
   const filters = query.topLevelFilters();
@@ -111,21 +113,21 @@ export function FilterHeaderToggle({
   );
 }
 
-export function FilterHeader({ className, question, expanded }) {
+export function FilterHeader({ question, expanded, onQueryChange }) {
   const query = question.query();
   const filters = query.topLevelFilters();
   if (filters.length === 0 || !expanded) {
     return null;
   }
   return (
-    <FilterHeaderContainer className={className} data-testid="qb-filters-panel">
+    <FilterHeaderContainer data-testid="qb-filters-panel">
       <div className="flex flex-wrap align-center">
         {filters.map((filter, index) => (
           <PopoverWithTrigger
             key={index}
             triggerElement={
               <FilterPill
-                onRemove={() => filter.remove().update(null, { run: true })}
+                onRemove={() => onQueryChange(filter.remove().rootQuery())}
               >
                 {filter.displayName()}
               </FilterPill>
@@ -138,7 +140,7 @@ export function FilterHeader({ className, question, expanded }) {
               query={query}
               filter={filter}
               onChangeFilter={newFilter =>
-                newFilter.replace().update(null, { run: true })
+                onQueryChange(newFilter.replace().rootQuery())
               }
               className="scroll-y"
             />
@@ -149,11 +151,12 @@ export function FilterHeader({ className, question, expanded }) {
   );
 }
 
-export function QuestionFilterWidget({ onOpenModal }) {
+export function QuestionFilterWidget({ onOpenModal, className }) {
   return (
     <HeaderButton
       large
       labelBreakpoint="sm"
+      className={className}
       color={color("filter")}
       onClick={() => onOpenModal(MODAL_TYPES.FILTERS)}
       aria-label={t`Show more filters`}
@@ -161,28 +164,6 @@ export function QuestionFilterWidget({ onOpenModal }) {
     >
       {t`Filter`}
     </HeaderButton>
-  );
-}
-
-export function MobileQuestionFilterWidget({
-  isShowingFilterSidebar,
-  onAddFilter,
-  onCloseFilter,
-  ...props
-}) {
-  return (
-    <ViewButton
-      large
-      primary
-      color={color("filter")}
-      labelBreakpoint="sm"
-      icon="filter"
-      onClick={isShowingFilterSidebar ? onCloseFilter : onAddFilter}
-      active={isShowingFilterSidebar}
-      {...props}
-    >
-      &nbsp;
-    </ViewButton>
   );
 }
 

@@ -96,7 +96,7 @@
 
 (defn load-data-get-rows
   "Used by `make-load-data-fn`; get a sequence of row maps for use in a `insert!` when loading table data."
-  [driver dbdef tabledef]
+  [_driver _dbdef tabledef]
   (let [fields-for-insert (mapv (comp keyword :field-name)
                                 (:field-definitions tabledef))]
     ;; TIMEZONE FIXME
@@ -106,7 +106,7 @@
 (defn- make-insert!
   "Used by `make-load-data-fn`; creates the actual `insert!` function that gets passed to the `insert-middleware-fns`
   described above."
-  [driver conn {:keys [database-name], :as dbdef} {:keys [table-name], :as tabledef}]
+  [driver conn {:keys [database-name], :as _dbdef} {:keys [table-name], :as _tabledef}]
   (let [components       (for [component (sql.tx/qualified-name-components driver database-name table-name)]
                            (ddl.i/format-name driver (u/qualified-name component)))
         table-identifier (sql.qp/->honeysql driver (apply hx/identifier :table components))]
@@ -181,13 +181,13 @@
   (let [statements (ddl/insert-rows-ddl-statements driver table-identifier row-or-rows)]
     ;; `set-parameters` might try to look at DB timezone; we don't want to do that while loading the data because the
     ;; DB hasn't been synced yet
-    (when-let [set-timezone-format-string (sql-jdbc.execute/set-timezone-sql driver)]
+    (when-let [set-timezone-format-string #_{:clj-kondo/ignore [:deprecated-var]} (sql-jdbc.execute/set-timezone-sql driver)]
       (let [set-timezone-sql (format set-timezone-format-string "'UTC'")]
         (log/debugf "Setting timezone to UTC before inserting data with SQL \"%s\"" set-timezone-sql)
         (jdbc/execute! spec [set-timezone-sql])))
     (mt/with-database-timezone-id nil
       (try
-        ;; TODO - why don't we use `execute/execute-sql!` here like we do below?
+        ;; TODO - why don't we use [[execute/execute-sql!]] here like we do below?
         (doseq [sql+args statements]
           (log/tracef "[insert] %s" (pr-str sql+args))
           (jdbc/execute! spec sql+args {:set-parameters (fn [stmt params]

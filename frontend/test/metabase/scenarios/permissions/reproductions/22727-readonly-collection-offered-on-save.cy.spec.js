@@ -3,7 +3,7 @@ import { USER_GROUPS } from "__support__/e2e/cypress_data";
 
 const { ALL_USERS_GROUP } = USER_GROUPS;
 
-describe.skip("issue 22727", () => {
+describe("issue 22727", () => {
   beforeEach(() => {
     cy.intercept("POST", "/api/dataset").as("dataset");
 
@@ -24,9 +24,7 @@ describe.skip("issue 22727", () => {
     visitQuestion(1);
 
     cy.findByText("31.44").click();
-    popover()
-      .contains("=")
-      .click();
+    popover().contains("=").click();
     cy.wait("@dataset");
 
     cy.findByText("Save").click();

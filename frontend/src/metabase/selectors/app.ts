@@ -1,6 +1,7 @@
 import { Location } from "history";
 import { createSelector } from "reselect";
-import { getUser } from "metabase/selectors/user";
+import { t } from "ttag";
+import { getUser, getUserIsAdmin } from "metabase/selectors/user";
 import {
   getIsEditing as getIsEditingDashboard,
   getDashboard,
@@ -18,7 +19,12 @@ export interface RouterProps {
 }
 
 const HOMEPAGE_PATH = /^\/$/;
-const PATHS_WITHOUT_NAVBAR = [/\/model\/.*\/query/, /\/model\/.*\/metadata/];
+const PATHS_WITHOUT_NAVBAR = [
+  /\/model\/.*\/query/,
+  /\/model\/.*\/metadata/,
+  /\/model\/query/,
+  /\/model\/metadata/,
+];
 const EMBEDDED_PATHS_WITH_NAVBAR = [
   HOMEPAGE_PATH,
   /^\/collection\/.*/,
@@ -29,6 +35,7 @@ const PATHS_WITH_COLLECTION_BREADCRUMBS = [
   /\/model\//,
   /\/dashboard\//,
 ];
+const PATHS_WITH_QUESTION_LINEAGE = [/\/question/, /\/model/];
 
 export const getRouterPath = (state: State, props: RouterProps) => {
   return props.location.pathname;
@@ -111,6 +118,11 @@ export const getIsNewButtonVisible = createSelector(
   },
 );
 
+export const getIsProfileLinkVisible = createSelector(
+  [getIsEmbedded],
+  isEmbedded => !isEmbedded,
+);
+
 export const getErrorPage = (state: State) => {
   return state.app.errorPage;
 };
@@ -134,10 +146,21 @@ export const getIsCollectionPathVisible = createSelector(
 );
 
 export const getIsQuestionLineageVisible = createSelector(
-  [getQuestion, getOriginalQuestion],
-  (question, originalQuestion) =>
+  [getQuestion, getOriginalQuestion, getRouterPath],
+  (question, originalQuestion, path) =>
     question != null &&
     !question.isSaved() &&
     originalQuestion != null &&
-    !originalQuestion.isDataset(),
+    !originalQuestion.isDataset() &&
+    PATHS_WITH_QUESTION_LINEAGE.some(pattern => pattern.test(path)),
+);
+
+export const getSettings = createSelector(
+  (state: State) => state.settings,
+  settings => settings.values,
+);
+
+export const getTokenStatusStatus = createSelector(
+  [getSettings],
+  settings => settings["token-status"]?.status,
 );

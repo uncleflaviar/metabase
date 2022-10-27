@@ -16,13 +16,11 @@ describe("#22206 adding and removing columns doesn't duplicate columns", () => {
     cy.findByTestId("sidebar-content")
       .findByText("Subtotal")
       .parent()
-      .find(".Icon-close")
+      .find(".Icon-eye_filled")
       .click();
 
     // rerun query
-    cy.get(".RunButton")
-      .first()
-      .click();
+    cy.get(".RunButton").first().click();
     cy.wait("@dataset");
     cy.findByTestId("loading-spinner").should("not.exist");
 

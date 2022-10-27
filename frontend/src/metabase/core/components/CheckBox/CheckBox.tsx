@@ -1,11 +1,22 @@
 import React, {
+  ChangeEvent,
+  FocusEvent,
   forwardRef,
+  HTMLAttributes,
   isValidElement,
   ReactElement,
+  ReactNode,
   Ref,
   useRef,
 } from "react";
 import Tooltip from "metabase/components/Tooltip";
+import {
+  DEFAULT_CHECKED_COLOR,
+  DEFAULT_ICON_PADDING,
+  DEFAULT_SIZE,
+  DEFAULT_UNCHECKED_COLOR,
+} from "./constants";
+import { isEllipsisActive } from "./utils";
 import {
   CheckBoxContainer,
   CheckBoxIcon,
@@ -14,25 +25,22 @@ import {
   CheckBoxLabel,
   CheckBoxRoot,
 } from "./CheckBox.styled";
-import { CheckBoxProps, CheckboxTooltipProps } from "./types";
-import { isEllipsisActive } from "./utils";
-import {
-  DEFAULT_CHECKED_COLOR,
-  DEFAULT_ICON_PADDING,
-  DEFAULT_SIZE,
-  DEFAULT_UNCHECKED_COLOR,
-} from "./constants";
 
-function CheckboxTooltip({
-  hasTooltip,
-  tooltipLabel,
-  children,
-}: CheckboxTooltipProps): ReactElement {
-  return hasTooltip ? (
-    <Tooltip tooltip={tooltipLabel}>{children}</Tooltip>
-  ) : (
-    <>{children}</>
-  );
+export interface CheckBoxProps
+  extends Omit<HTMLAttributes<HTMLElement>, "onChange" | "onFocus" | "onBlur"> {
+  name?: string;
+  label?: ReactNode;
+  labelEllipsis?: boolean;
+  checked?: boolean;
+  indeterminate?: boolean;
+  disabled?: boolean;
+  size?: number;
+  checkedColor?: string;
+  uncheckedColor?: string;
+  autoFocus?: boolean;
+  onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
+  onFocus?: (event: FocusEvent<HTMLInputElement>) => void;
+  onBlur?: (event: FocusEvent<HTMLInputElement>) => void;
 }
 
 const CheckBox = forwardRef<HTMLLabelElement, CheckBoxProps>(function Checkbox(
@@ -47,6 +55,7 @@ const CheckBox = forwardRef<HTMLLabelElement, CheckBoxProps>(function Checkbox(
     checkedColor = DEFAULT_CHECKED_COLOR,
     uncheckedColor = DEFAULT_UNCHECKED_COLOR,
     autoFocus,
+    onClick,
     onChange,
     onFocus,
     onBlur,
@@ -66,16 +75,18 @@ const CheckBox = forwardRef<HTMLLabelElement, CheckBoxProps>(function Checkbox(
         tooltipLabel={label}
       >
         <CheckBoxInput
+          id={name}
+          name={name}
           type="checkbox"
           checked={isControlledCheckBoxInput ? !!checked : undefined}
           defaultChecked={isControlledCheckBoxInput ? undefined : !!checked}
           size={size}
           disabled={disabled}
           autoFocus={autoFocus}
+          onClick={onClick}
           onChange={isControlledCheckBoxInput ? onChange : undefined}
           onFocus={onFocus}
           onBlur={onBlur}
-          id={name}
         />
         <CheckBoxContainer disabled={disabled}>
           <CheckBoxIconContainer
@@ -106,6 +117,24 @@ const CheckBox = forwardRef<HTMLLabelElement, CheckBoxProps>(function Checkbox(
     </CheckBoxRoot>
   );
 });
+
+interface CheckboxTooltipProps {
+  hasTooltip: boolean;
+  tooltipLabel: ReactNode;
+  children: ReactNode;
+}
+
+function CheckboxTooltip({
+  hasTooltip,
+  tooltipLabel,
+  children,
+}: CheckboxTooltipProps): ReactElement {
+  return hasTooltip ? (
+    <Tooltip tooltip={tooltipLabel}>{children}</Tooltip>
+  ) : (
+    <>{children}</>
+  );
+}
 
 export default Object.assign(CheckBox, {
   Label: CheckBoxLabel,

@@ -44,14 +44,14 @@ jobs:
 
   e2e-tests:
     runs-on: ubuntu-20.04
-    timeout-minutes: 35
+    timeout-minutes: 45
     needs: build
     name: e2e-tests-${{ matrix.folder }}${{ matrix.context }}-${{ matrix.edition }}
     env:
       MB_EDITION: ${{ matrix.edition }}
       DISPLAY: ""
       QA_DB_ENABLED: true
-      ENTERPRISE_TOKEN: ${{ secrets.ENTERPRISE_TOKEN }}
+      MB_PREMIUM_EMBEDDING_TOKEN: ${{ secrets.ENTERPRISE_TOKEN }}
       MB_SNOWPLOW_AVAILABLE: true
       MB_SNOWPLOW_URL: "http://localhost:9090"  # Snowplow micro
     strategy:
@@ -89,6 +89,13 @@ jobs:
         ports:
           - "80:80"
           - "25:25"
+        credentials:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      openldap:
+        image: osixia/openldap:1.5.0
+        ports:
+          - "389:389"
         credentials:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -147,13 +154,12 @@ jobs:
 
     - name: Run EE Cypress tests on ${{ matrix.folder }}
       if: matrix.edition == 'ee'
-      run: yarn run test-cypress-run --folder ${{ matrix.folder }}
+      run: |
+        yarn run test-cypress-run \
+        --env grepTags="-@quarantine" \
+        --folder ${{ matrix.folder }}
       env:
         TERM: xterm
-
-    - name: Generate Mochawesome Reports
-      if: failure()
-      run: yarn generate-cypress-html-report
 
     - name: Upload Cypress Artifacts upon failure
       uses: actions/upload-artifact@v2
@@ -172,7 +178,7 @@ jobs:
     name: percy-tests-sanity-check-${{ matrix.edition }}
     env:
       MB_EDITION: ${{ matrix.edition }}
-      ENTERPRISE_TOKEN: ${{ secrets.ENTERPRISE_TOKEN }}
+      MB_PREMIUM_EMBEDDING_TOKEN: ${{ secrets.ENTERPRISE_TOKEN }}
     strategy:
       matrix:
         java-version: [11]

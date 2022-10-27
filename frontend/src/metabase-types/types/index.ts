@@ -1,3 +1,8 @@
+/**
+ * ⚠️
+ * @deprecated use existing types from, or add to metabase-types/api/*
+ */
+
 // ISO8601 timestamp
 export type ISO8601Time = string;
 
@@ -35,6 +40,5 @@ export type Moment = {
 
 export type AsyncFn = (...args: any[]) => Promise<any>;
 
-export type AsyncReturnType<
-  T extends (...args: any) => Promise<any>
-> = T extends (...args: any) => Promise<infer R> ? R : any;
+export type AsyncReturnType<T extends (...args: any) => Promise<any>> =
+  T extends (...args: any) => Promise<infer R> ? R : any;

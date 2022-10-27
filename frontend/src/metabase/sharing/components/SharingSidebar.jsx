@@ -4,6 +4,7 @@ import React from "react";
 import PropTypes from "prop-types";
 import _ from "underscore";
 
+import { connect } from "react-redux";
 import NewPulseSidebar from "metabase/sharing/components/NewPulseSidebar";
 import PulsesListSidebar from "metabase/sharing/components/PulsesListSidebar";
 import {
@@ -14,8 +15,6 @@ import LoadingAndErrorWrapper from "metabase/components/LoadingAndErrorWrapper";
 import Sidebar from "metabase/dashboard/components/Sidebar";
 import Pulses from "metabase/entities/pulses";
 import User from "metabase/entities/users";
-
-import { connect } from "react-redux";
 
 import {
   cleanPulse,
@@ -122,7 +121,7 @@ class SharingSidebarInner extends React.Component {
     saveEditingPulse: PropTypes.func.isRequired,
     testPulse: PropTypes.func.isRequired,
     updateEditingPulse: PropTypes.func.isRequired,
-    pulses: PropTypes.array.isRequired,
+    pulses: PropTypes.array,
     onCancel: PropTypes.func.isRequired,
     setPulseArchived: PropTypes.func.isRequired,
     users: PropTypes.array,
@@ -251,14 +250,8 @@ class SharingSidebarInner extends React.Component {
 
   render() {
     const { editingMode } = this.state;
-    const {
-      pulse,
-      pulses,
-      formInput,
-      testPulse,
-      users,
-      dashboard,
-    } = this.props;
+    const { pulse, pulses, formInput, testPulse, users, dashboard } =
+      this.props;
 
     const isLoading = !pulses || !users || !pulse || !formInput?.channels;
 

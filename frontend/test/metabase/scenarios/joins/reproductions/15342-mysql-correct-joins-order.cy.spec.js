@@ -7,7 +7,7 @@ import {
 
 const MYSQL_DB_NAME = "QA MySQL8";
 
-describe.skip("issue 15342", () => {
+describe.skip("issue 15342", { tags: "@external" }, () => {
   beforeEach(() => {
     restore("mysql-8");
     cy.signInAsAdmin();
@@ -61,9 +61,7 @@ function addJoin({
   rightColumn,
   joinType = "left",
 } = {}) {
-  cy.icon("join_left_outer")
-    .last()
-    .click();
+  cy.icon("join_left_outer").last().click();
 
   selectFromDropdown(rightTable).click();
 

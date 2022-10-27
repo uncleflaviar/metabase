@@ -1,12 +1,23 @@
-import _ from "underscore";
-import { restore, modal, popover, describeEE } from "__support__/e2e/helpers";
+import {
+  restore,
+  modal,
+  popover,
+  describeEE,
+  getFullName,
+} from "__support__/e2e/helpers";
+import { USERS } from "__support__/e2e/cypress_data";
+
+const { normal, nocollection } = USERS;
+
+const noCollectionUserName = getFullName(nocollection);
+const normalUserName = getFullName(normal);
 
 describeEE("scenarios > admin > people", () => {
   beforeEach(() => {
     restore();
     cy.signInAsAdmin();
     cy.visit("/admin/people");
-    cy.findByText("Robert Tableton")
+    cy.findByText(normalUserName)
       .closest("tr")
       .findByText("2 other groups")
       .click();
@@ -26,9 +37,7 @@ describeEE("scenarios > admin > people", () => {
       });
 
       // Edit group name
-      cy.icon("ellipsis")
-        .eq(0)
-        .click();
+      cy.icon("ellipsis").eq(0).click();
       cy.findByText("Edit Name").click();
       cy.get("input").type(" updated");
       cy.button("Done").click();
@@ -36,16 +45,14 @@ describeEE("scenarios > admin > people", () => {
       // Click on the group with the new name
       cy.findByText("collection updated").click();
 
-      // Add "No Collection Tableton" member
+      // Add "No Collection" user as a member
       cy.button("Add members").click();
       cy.focused().type("No");
-      cy.findByText("No Collection Tableton").click();
+      cy.findByText(noCollectionUserName).click();
       cy.findByText("Add").click();
 
       // Find user row
-      cy.findByText("No Collection Tableton")
-        .closest("tr")
-        .as("userRow");
+      cy.findByText(noCollectionUserName).closest("tr").as("userRow");
 
       // Promote to manager and demote back to member
       cy.get("@userRow").within(() => {
@@ -62,10 +69,10 @@ describeEE("scenarios > admin > people", () => {
       cy.get("@userRow").within(() => {
         cy.icon("close").click();
       });
-      cy.findByText("No Collection Tableton").should("not.exist");
+      cy.findByText(noCollectionUserName).should("not.exist");
 
       // Demote myself
-      cy.findByText("Robert Tableton")
+      cy.findByText(normalUserName)
         .closest("tr")
         .within(() => {
           cy.findByText("Manager").realHover();
@@ -80,7 +87,7 @@ describeEE("scenarios > admin > people", () => {
       cy.findByText("data").click();
 
       // Remove myself
-      cy.findByText("Robert Tableton")
+      cy.findByText(normalUserName)
         .closest("tr")
         .within(() => {
           cy.icon("close").click();
@@ -93,7 +100,7 @@ describeEE("scenarios > admin > people", () => {
 
     it("can manage members from the people page", () => {
       // Open membership select for a user
-      cy.findByText("No Collection Tableton")
+      cy.findByText(noCollectionUserName)
         .closest("tr")
         .as("userRow")
         .within(() => {
@@ -123,7 +130,7 @@ describeEE("scenarios > admin > people", () => {
       });
 
       // Find own row
-      cy.findByText("Robert Tableton")
+      cy.findByText(normalUserName)
         .closest("tr")
         .within(() => {
           cy.findByText("2 other groups").click();
@@ -131,9 +138,7 @@ describeEE("scenarios > admin > people", () => {
 
       // Demote myself from being manager
       popover().within(() => {
-        cy.icon("arrow_down")
-          .eq(0)
-          .click();
+        cy.icon("arrow_down").eq(0).click();
       });
       confirmLosingAbilityToManageGroup();
 
@@ -169,9 +174,7 @@ function confirmLosingAbilityToManageGroup() {
 }
 
 function removeFirstGroup() {
-  cy.icon("ellipsis")
-    .eq(0)
-    .click();
+  cy.icon("ellipsis").eq(0).click();
   cy.findByText("Remove Group").click();
   cy.button("Yes").click();
 }

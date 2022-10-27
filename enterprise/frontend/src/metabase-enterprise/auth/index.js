@@ -1,22 +1,26 @@
 import React from "react";
-import ExternalLink from "metabase/core/components/ExternalLink";
 import { t, jt } from "ttag";
 import { updateIn } from "icepick";
+import ExternalLink from "metabase/core/components/ExternalLink";
+import { LOGIN, LOGIN_GOOGLE } from "metabase/auth/actions";
 
 import { hasPremiumFeature } from "metabase-enterprise/settings";
 import MetabaseSettings from "metabase/lib/settings";
 import {
+  PLUGIN_ADMIN_SETTINGS_UPDATES,
   PLUGIN_AUTH_PROVIDERS,
   PLUGIN_IS_PASSWORD_USER,
-  PLUGIN_ADMIN_SETTINGS_UPDATES,
+  PLUGIN_REDUX_MIDDLEWARES,
 } from "metabase/plugins";
-import { UtilApi } from "metabase/services";
 
 import AuthenticationOption from "metabase/admin/settings/components/widgets/AuthenticationOption";
+import AuthenticationWidget from "metabase/admin/settings/components/widgets/AuthenticationWidget";
 import GroupMappingsWidget from "metabase/admin/settings/components/widgets/GroupMappingsWidget";
 import SecretKeyWidget from "metabase/admin/settings/components/widgets/SecretKeyWidget";
+import SessionTimeoutSetting from "metabase-enterprise/auth/components/SessionTimeoutSetting";
 
 import SettingsGoogleForm from "metabase/admin/settings/components/SettingsGoogleForm";
+import { createSessionMiddleware } from "../auth/middleware/session-middleware";
 import SettingsSAMLForm from "./components/SettingsSAMLForm";
 import SettingsJWTForm from "./components/SettingsJWTForm";
 
@@ -34,11 +38,15 @@ PLUGIN_ADMIN_SETTINGS_UPDATES.push(sections =>
       getHidden: () => !hasPremiumFeature("sso"),
     },
     {
-      authName: t`JWT`,
-      authDescription: t`Allows users to login via a JWT Identity Provider.`,
-      authType: "jwt",
-      authEnabled: settings => settings["jwt-enabled"],
-      widget: AuthenticationOption,
+      key: "jwt-enabled",
+      description: null,
+      widget: AuthenticationWidget,
+      getProps: (setting, settings) => ({
+        authName: t`JWT`,
+        authDescription: t`Allows users to login via a JWT Identity Provider.`,
+        authType: "jwt",
+        authConfigured: settings["jwt-configured"],
+      }),
       getHidden: () => !hasPremiumFeature("sso"),
     },
     {
@@ -47,7 +55,7 @@ PLUGIN_ADMIN_SETTINGS_UPDATES.push(sections =>
       description: t`When enabled, users can additionally log in with email and password.`,
       type: "boolean",
       getHidden: settings =>
-        !settings["google-auth-client-id"] &&
+        !settings["google-auth-enabled"] &&
         !settings["ldap-enabled"] &&
         !settings["saml-enabled"] &&
         !settings["jwt-enabled"],
@@ -58,10 +66,16 @@ PLUGIN_ADMIN_SETTINGS_UPDATES.push(sections =>
       description: t`When enabled, administrators will receive an email the first time a user uses Single Sign-On.`,
       type: "boolean",
       getHidden: settings =>
-        !settings["google-auth-client-id"] &&
+        !settings["google-auth-enabled"] &&
         !settings["ldap-enabled"] &&
         !settings["saml-enabled"] &&
         !settings["jwt-enabled"],
+    },
+    {
+      key: "session-timeout",
+      display_name: t`Session timeout`,
+      description: t`Time before inactive users are logged out.`,
+      widget: SessionTimeoutSetting,
     },
   ]),
 );
@@ -77,7 +91,7 @@ PLUGIN_ADMIN_SETTINGS_UPDATES.push(sections => ({
         description: jt`Use the settings below to configure your SSO via SAML. If you have any questions, check out our ${(
           <ExternalLink
             href={MetabaseSettings.docsUrl(
-              "enterprise-guide/authenticating-with-saml",
+              "people-and-groups/authenticating-with-saml",
             )}
           >
             {t`documentation`}
@@ -168,26 +182,9 @@ PLUGIN_ADMIN_SETTINGS_UPDATES.push(sections => ({
     settings: [
       {
         key: "jwt-enabled",
-        description: null,
-        getHidden: settings => settings["jwt-enabled"],
-        onChanged: async (
-          oldValue,
-          newValue,
-          settingsValues,
-          onChangeSetting,
-        ) => {
-          // Generate a secret key if none already exists
-          if (!oldValue && newValue && !settingsValues["jwt-shared-secret"]) {
-            const result = await UtilApi.random_token();
-            await onChangeSetting("jwt-shared-secret", result.token);
-          }
-        },
-      },
-      {
-        key: "jwt-enabled",
         display_name: t`JWT Authentication`,
         type: "boolean",
-        getHidden: settings => !settings["jwt-enabled"],
+        getHidden: () => true,
       },
       {
         key: "jwt-identity-provider-uri",
@@ -245,10 +242,13 @@ const SSO_PROVIDER = {
 };
 
 PLUGIN_AUTH_PROVIDERS.push(providers => {
-  if (MetabaseSettings.get("other-sso-configured?")) {
+  if (MetabaseSettings.get("other-sso-enabled?")) {
     providers = [SSO_PROVIDER, ...providers];
   }
-  if (!MetabaseSettings.get("enable-password-login")) {
+  if (
+    !MetabaseSettings.isPasswordLoginEnabled() &&
+    !MetabaseSettings.isLdapEnabled()
+  ) {
     providers = providers.filter(p => p.name !== "password");
   }
   return providers;
@@ -258,7 +258,7 @@ PLUGIN_IS_PASSWORD_USER.push(
   user =>
     !user.google_auth &&
     !user.ldap_auth &&
-    MetabaseSettings.get("enable-password-login"),
+    MetabaseSettings.isPasswordLoginEnabled(),
 );
 
 PLUGIN_ADMIN_SETTINGS_UPDATES.push(sections =>
@@ -291,6 +291,8 @@ PLUGIN_ADMIN_SETTINGS_UPDATES.push(sections => ({
     settings: [
       {
         key: "google-auth-client-id",
+        required: true,
+        autoFocus: true,
       },
       {
         // Default to OSS fields if enterprise SSO is not enabled
@@ -306,3 +308,5 @@ PLUGIN_ADMIN_SETTINGS_UPDATES.push(sections => ({
     ],
   },
 }));
+
+PLUGIN_REDUX_MIDDLEWARES.push(createSessionMiddleware([LOGIN, LOGIN_GOOGLE]));

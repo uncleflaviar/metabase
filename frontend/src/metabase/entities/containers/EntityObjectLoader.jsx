@@ -4,9 +4,9 @@ import { connect } from "react-redux";
 import { createSelector } from "reselect";
 import _ from "underscore";
 
-import entityType from "./EntityType";
 import { createMemoizedSelector } from "metabase/lib/redux";
 import LoadingAndErrorWrapper from "metabase/components/LoadingAndErrorWrapper";
+import entityType from "./EntityType";
 
 // props that shouldn't be passed to children in order to properly stack
 const CONSUMED_PROPS = [
@@ -74,19 +74,17 @@ class EntityObjectLoaderInner extends React.Component {
     ) {
       nextProps.fetch(
         { id: nextProps.entityId, ...nextProps.entityQuery },
-        { reload: nextProps.reload, properties: nextProps.properties },
+        {
+          reload: nextProps.reload,
+          properties: nextProps.properties,
+          noEvent: !nextProps.dispatchApiErrorEvent,
+        },
       );
     }
   }
   renderChildren = () => {
-    let {
-      children,
-      entityDef,
-      entityAlias,
-      wrapped,
-      object,
-      ...props
-    } = this.props; // eslint-disable-line no-unused-vars
+    let { children, entityDef, entityAlias, wrapped, object, ...props } =
+      this.props; // eslint-disable-line no-unused-vars
 
     if (wrapped) {
       object = this._getWrappedObject(this.props);
@@ -173,11 +171,13 @@ const EntityObjectLoader = _.compose(
 
 export default EntityObjectLoader;
 
-export const entityObjectLoader = eolProps =>
+export const entityObjectLoader =
+  eolProps =>
   // eslint-disable-line react/display-name
   ComposedComponent =>
-    // eslint-disable-next-line react/display-name
-    props => (
+  // eslint-disable-next-line react/display-name
+  props =>
+    (
       <EntityObjectLoader {...props} {...eolProps}>
         {childProps => (
           <ComposedComponent

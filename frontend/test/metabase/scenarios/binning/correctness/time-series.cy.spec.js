@@ -5,9 +5,8 @@ import {
   summarize,
 } from "__support__/e2e/helpers";
 
-import { TIME_OPTIONS } from "./constants";
-
 import { SAMPLE_DATABASE } from "__support__/e2e/cypress_sample_database";
+import { TIME_OPTIONS } from "./constants";
 
 const { ORDERS_ID } = SAMPLE_DATABASE;
 
@@ -83,13 +82,9 @@ function getTitle(title) {
 function assertOnHeaderCells(bucketSize) {
   const headerRegex = new RegExp(`Created At: ${bucketSize}`, "i");
 
-  cy.get(".cellData")
-    .eq(0)
-    .contains(headerRegex);
+  cy.get(".cellData").eq(0).contains(headerRegex);
 
-  cy.get(".cellData")
-    .eq(1)
-    .contains("Count");
+  cy.get(".cellData").eq(1).contains("Count");
 }
 
 function assertOnTableValues(values) {

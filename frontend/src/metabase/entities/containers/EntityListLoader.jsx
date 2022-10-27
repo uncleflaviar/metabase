@@ -6,15 +6,17 @@ import _ from "underscore";
 import { createSelector } from "reselect";
 import { createMemoizedSelector } from "metabase/lib/redux";
 
-import entityType from "./EntityType";
 import paginationState from "metabase/hoc/PaginationState";
 import LoadingAndErrorWrapper from "metabase/components/LoadingAndErrorWrapper";
 import { capitalize } from "metabase/lib/formatting";
+import entityType from "./EntityType";
 
 const propTypes = {
   entityType: PropTypes.string,
   entityQuery: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
-  reload: PropTypes.bool,
+  // We generally expect booleans here,
+  // but a parent entity loader may pass `reload` as a function.
+  reload: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
   reloadInterval: PropTypes.oneOfType([PropTypes.number, PropTypes.func]),
   wrapped: PropTypes.bool,
   debounced: PropTypes.bool,

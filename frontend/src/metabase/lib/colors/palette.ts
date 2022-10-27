@@ -35,6 +35,8 @@ export const colors: ColorPalette = {
   "bg-light": "#F9FBFC",
   "bg-white": "#FFFFFF",
   "bg-yellow": "#FFFCF2",
+  "bg-night": "#42484E",
+  "bg-error": "#ED6E6E55",
   shadow: "rgba(0,0,0,0.08)",
   border: "#EEECEC",
 
@@ -46,6 +48,8 @@ export const colors: ColorPalette = {
   "saturated-yellow": "#F9CF48",
 };
 /* eslint-enable no-color-literals */
+
+export const originalColors = { ...colors };
 
 const aliases: Record<string, (palette: ColorPalette) => string> = {
   dashboard: palette => color("brand", palette),
@@ -89,21 +93,15 @@ export const color = (color: string, palette = colors) => {
 };
 
 export const alpha = (c: string, a: number) => {
-  return Color(color(c))
-    .alpha(a)
-    .string();
+  return Color(color(c)).alpha(a).string();
 };
 
 export const lighten = (c: string, f: number = 0.5) => {
-  return Color(color(c))
-    .lighten(f)
-    .string();
+  return Color(color(c)).lighten(f).string();
 };
 
 export const darken = (c: string, f: number = 0.25) => {
-  return Color(color(c))
-    .darken(f)
-    .string();
+  return Color(color(c)).darken(f).string();
 };
 
 export const tint = (c: string, f: number = 0.125) => {
@@ -114,4 +112,56 @@ export const tint = (c: string, f: number = 0.125) => {
 export const shade = (c: string, f: number = 0.125) => {
   const value = Color(color(c));
   return value.lightness(value.lightness() - f * 100).hex();
+};
+
+export const hueRotate = (c: string) => {
+  return Color(color(c)).hue() - Color(color(c, originalColors)).hue();
+};
+
+export const isLight = (c: string) => {
+  return Color(color(c)).isLight();
+};
+
+export const isDark = (c: string) => {
+  return Color(color(c)).isDark();
+};
+
+const LIGHT_HSL_RANGES = [
+  [
+    [42, 105],
+    [70, 100],
+    [75, 100],
+  ],
+  [
+    [140, 185],
+    [70, 100],
+    [75, 100],
+  ],
+  [
+    [40, 120],
+    [70, 100],
+    [70, 100],
+  ],
+  [
+    [40, 110],
+    [90, 100],
+    [0, 100],
+  ],
+  [
+    [150, 185],
+    [90, 100],
+    [0, 100],
+  ],
+];
+
+export const getTextColorForBackground = (backgroundColor: string) => {
+  const whiteTextContrast = Color(color(backgroundColor)).contrast(
+    Color(color("white")),
+  );
+  const darkTextContrast = Color(color(backgroundColor)).contrast(
+    Color(color("text-dark")),
+  );
+  return whiteTextContrast > darkTextContrast
+    ? color("white")
+    : color("text-dark");
 };

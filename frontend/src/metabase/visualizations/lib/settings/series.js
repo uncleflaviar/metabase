@@ -4,8 +4,8 @@ import _ from "underscore";
 import { getIn } from "icepick";
 
 import ChartNestedSettingSeries from "metabase/visualizations/components/settings/ChartNestedSettingSeries";
-import { nestedSettings } from "./nested";
 import { getColorsForValues } from "metabase/lib/colors/charts";
+import { nestedSettings } from "./nested";
 
 export function keyForSingleSeries(single) {
   // _seriesKey is sometimes set by transformSeries
@@ -109,9 +109,10 @@ export function seriesSetting({
       readDependencies: ["display"],
     },
     axis: {
-      title: t`Which axis?`,
+      title: t`Y-axis position`,
       widget: "segmentedControl",
       default: null,
+      getHidden: (single, settings) => settings["display"] === "row",
       props: {
         options: [
           { name: t`Auto`, value: null },
@@ -119,6 +120,7 @@ export function seriesSetting({
           { name: t`Right`, value: "right" },
         ],
       },
+      readDependencies: ["display"],
     },
     show_series_values: {
       title: t`Show values for this series`,

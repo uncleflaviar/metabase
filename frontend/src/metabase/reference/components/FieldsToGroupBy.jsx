@@ -2,16 +2,15 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
 
-import S from "./UsefulQuestions.css";
 import D from "metabase/reference/components/Detail.css";
 import L from "metabase/components/List.css";
-
-import { getQuestionUrl } from "../utils";
 
 import FieldToGroupBy from "metabase/reference/components/FieldToGroupBy";
 
 import { fetchTableMetadata } from "metabase/redux/metadata";
 import { getMetadata } from "metabase/selectors/metadata";
+import { getQuestionUrl } from "../utils";
+import S from "./UsefulQuestions.css";
 
 const mapDispatchToProps = {
   fetchTableMetadata,
@@ -23,14 +22,8 @@ const mapStateToProps = (state, props) => ({
 
 class FieldsToGroupBy extends Component {
   render() {
-    const {
-      fields,
-      databaseId,
-      metric,
-      title,
-      onChangeLocation,
-      metadata,
-    } = this.props;
+    const { fields, databaseId, metric, title, onChangeLocation, metadata } =
+      this.props;
 
     return (
       <div>

@@ -12,7 +12,12 @@ import {
 import { getParameterMappingOptions as _getParameterMappingOptions } from "metabase/parameters/utils/mapping-options";
 
 import { SIDEBAR_NAME } from "metabase/dashboard/constants";
+
 import { getEmbedOptions, getIsEmbedded } from "metabase/selectors/embed";
+
+import Question from "metabase-lib/Question";
+
+import { isVirtualDashCard } from "./utils";
 
 export const getDashboardId = state => state.dashboard.dashboardId;
 export const getIsEditing = state => !!state.dashboard.isEditing;
@@ -65,6 +70,30 @@ export const getDashboard = createSelector(
 );
 
 export const getLoadingDashCards = state => state.dashboard.loadingDashCards;
+
+export const getDashCardById = (state, dashcardId) => {
+  const dashcards = getDashcards(state);
+  return dashcards[dashcardId];
+};
+
+export const getSingleDashCardData = (state, dashcardId) => {
+  const dashcard = getDashCardById(state, dashcardId);
+  const cardDataMap = getCardData(state);
+  if (!dashcard || !cardDataMap) {
+    return;
+  }
+  return cardDataMap?.[dashcard.id]?.[dashcard.card_id]?.data;
+};
+
+export const getDashCardTable = (state, dashcardId) => {
+  const dashcard = getDashCardById(state, dashcardId);
+  if (!dashcard || isVirtualDashCard(dashcard)) {
+    return null;
+  }
+  const metadata = getMetadata(state);
+  const question = new Question(dashcard.card, metadata);
+  return question.table();
+};
 
 export const getDashboardComplete = createSelector(
   [getDashboard, getDashcards],
@@ -132,8 +161,8 @@ export const getParameterTarget = createSelector(
       return null;
     }
     const mapping = _.findWhere(dashcard.parameter_mappings, {
-      card_id: card.id,
       parameter_id: parameter.id,
+      ...(card && card.id && { card_id: card.id }),
     });
     return mapping && mapping.target;
   },
@@ -151,9 +180,9 @@ export const getParameters = createSelector(
 
 export const makeGetParameterMappingOptions = () => {
   const getParameterMappingOptions = createSelector(
-    [getMetadata, getEditingParameter, getCard],
-    (metadata, parameter, card) => {
-      return _getParameterMappingOptions(metadata, parameter, card);
+    [getMetadata, getEditingParameter, getCard, getDashCard],
+    (metadata, parameter, card, dashcard) => {
+      return _getParameterMappingOptions(metadata, parameter, card, dashcard);
     },
   );
   return getParameterMappingOptions;

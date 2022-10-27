@@ -53,8 +53,8 @@ describe("LOCAL TESTING ONLY > dashboard", () => {
                 card_id: QUESTION_ID,
                 row: 0,
                 col: 0,
-                sizeX: 12,
-                sizeY: 9,
+                size_x: 12,
+                size_y: 9,
                 visualization_settings: {},
                 parameter_mappings: [
                   {
@@ -69,9 +69,7 @@ describe("LOCAL TESTING ONLY > dashboard", () => {
         });
 
         cy.visit(`/dashboard/${DASHBOARD_ID}?location=AK&location=CA`);
-        filterWidget()
-          .contains(/\{0\}/)
-          .should("not.exist");
+        filterWidget().contains(/\{0\}/).should("not.exist");
       });
     });
   });

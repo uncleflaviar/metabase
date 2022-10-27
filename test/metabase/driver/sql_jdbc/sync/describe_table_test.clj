@@ -6,7 +6,8 @@
             [metabase.driver.sql-jdbc.sync.describe-table :as sql-jdbc.describe-table]
             [metabase.driver.sql-jdbc.sync.interface :as sql-jdbc.sync.interface]
             [metabase.models.table :refer [Table]]
-            [metabase.test :as mt]))
+            [metabase.test :as mt]
+            [toucan.db :as db]))
 
 (defn- sql-jdbc-drivers-with-default-describe-table-impl
   "All SQL JDBC drivers that use the default SQL JDBC implementation of `describe-table`. (As far as I know, this is
@@ -20,12 +21,12 @@
 (deftest describe-table-test
   (is (= {:name "VENUES",
           :fields
-          #{{:name "ID", :database-type "BIGINT", :base-type :type/BigInteger, :database-position 0, :pk? true}
-            {:name "NAME", :database-type "VARCHAR", :base-type :type/Text, :database-position 1}
-            {:name "CATEGORY_ID", :database-type "INTEGER", :base-type :type/Integer, :database-position 2}
-            {:name "LATITUDE", :database-type "DOUBLE", :base-type :type/Float, :database-position 3}
-            {:name "LONGITUDE", :database-type "DOUBLE", :base-type :type/Float, :database-position 4}
-            {:name "PRICE", :database-type "INTEGER", :base-type :type/Integer, :database-position 5}}}
+          #{{:name "ID", :database-type "BIGINT", :base-type :type/BigInteger, :database-position 0, :pk? true :database-required false}
+            {:name "NAME", :database-type "VARCHAR", :base-type :type/Text, :database-position 1 :database-required false}
+            {:name "CATEGORY_ID", :database-type "INTEGER", :base-type :type/Integer, :database-position 2 :database-required false}
+            {:name "LATITUDE", :database-type "DOUBLE", :base-type :type/Float, :database-position 3 :database-required false}
+            {:name "LONGITUDE", :database-type "DOUBLE", :base-type :type/Float, :database-position 4 :database-required false}
+            {:name "PRICE", :database-type "INTEGER", :base-type :type/Integer, :database-position 5 :database-required false}}}
          (sql-jdbc.describe-table/describe-table :h2 (mt/id) {:name "VENUES"}))))
 
 (deftest describe-table-fks-test
@@ -48,7 +49,7 @@
                  {:name "latitude"    :base-type :type/Float}
                  {:name "name"        :base-type :type/Text}
                  {:name "id"          :base-type :type/Integer}}
-               (->> (sql-jdbc.describe-table/describe-table driver/*driver* (mt/id) (Table (mt/id :venues)))
+               (->> (sql-jdbc.describe-table/describe-table driver/*driver* (mt/id) (db/select-one Table :id (mt/id :venues)))
                     :fields
                     (map (fn [{:keys [name base-type]}]
                            {:name      (str/lower-case name)
@@ -64,7 +65,7 @@
                                                                   (when (= (str/lower-case column-name) "longitude")
                                                                     :type/Longitude))]
       (is (= [["longitude" :type/Longitude]]
-             (->> (sql-jdbc.describe-table/describe-table (or driver/*driver* :h2) (mt/id) (Table (mt/id :venues)))
+             (->> (sql-jdbc.describe-table/describe-table (or driver/*driver* :h2) (mt/id) (db/select-one Table :id (mt/id :venues)))
                   :fields
                   (filter :semantic-type)
                   (map (juxt (comp str/lower-case :name) :semantic-type))))))))
@@ -114,4 +115,15 @@
     (let [row   {:bob {:dobbs {:robbs 123} :cobbs [1 2 3]}}
           types {[:bob :cobbs] clojure.lang.PersistentVector
                  [:bob :dobbs :robbs] java.lang.Long}]
-      (is (= types (#'sql-jdbc.describe-table/row->types row))))))
+      (is (= types (#'sql-jdbc.describe-table/row->types row)))))
+  (testing "JSON row->types handles bigint that comes in and gets interpreted as Java bigint OK (#22732)"
+    (let [int-row   {:zlob {"blob" (java.math.BigInteger. "123124124312134235234235345344324352")}}]
+      (is (= #{{:name "zlob → blob",
+                :database-type "decimal",
+                :base-type :type/BigInteger,
+                :database-position 0,
+                :visibility-type :normal,
+                :nfc-path [:zlob "blob"]}}
+             (-> int-row
+                 (#'sql-jdbc.describe-table/row->types)
+                 (#'sql-jdbc.describe-table/field-types->fields)))))))
